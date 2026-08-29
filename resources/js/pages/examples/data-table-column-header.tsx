@@ -1,4 +1,4 @@
-import { type Column, type RowData } from "@tanstack/react-table"
+import { Subscribe, type Column, type RowData } from "@tanstack/react-table"
 import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -19,6 +20,19 @@ interface DataTableColumnHeaderProps<TData extends RowData, TValue>
   title: string
 }
 
+function sortDirection(
+  sorting: Array<{ id: string; desc: boolean }>,
+  columnId: string,
+): false | "asc" | "desc" {
+  const sort = sorting.find((item) => item.id === columnId)
+
+  if (!sort) {
+    return false
+  }
+
+  return sort.desc ? "desc" : "asc"
+}
+
 export function DataTableColumnHeader<TData extends RowData, TValue>({
   column,
   title,
@@ -29,40 +43,76 @@ export function DataTableColumnHeader<TData extends RowData, TValue>({
   }
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8 data-[state=open]:bg-accent"
-          >
-            <span>{title}</span>
-            {column.getIsSorted() === "desc" ? (
-              <ArrowDown />
-            ) : column.getIsSorted() === "asc" ? (
-              <ArrowUp />
-            ) : (
-              <ChevronsUpDown />
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
-            <ArrowUp />
-            Asc
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
-            <ArrowDown />
-            Desc
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
-            <EyeOff />
-            Hide
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+    <Subscribe
+      source={column.table.store}
+      selector={(state) => sortDirection(state.sorting, column.id)}
+    >
+      {(sorted) => (
+        <div className={cn("flex items-center gap-2", className)}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-sort={
+                  sorted === "desc"
+                    ? "descending"
+                    : sorted === "asc"
+                      ? "ascending"
+                      : "none"
+                }
+                className={cn(
+                  "-ml-3 h-8 aria-expanded:bg-transparent aria-expanded:text-foreground",
+                  "focus-visible:border-transparent focus-visible:ring-0",
+                  sorted && "text-primary font-bold",
+                )}
+              >
+                <span>{title}</span>
+                {sorted === "desc" ? (
+                  <ArrowDown data-icon="inline-end" />
+                ) : sorted === "asc" ? (
+                  <ArrowUp data-icon="inline-end" />
+                ) : (
+                  <ChevronsUpDown
+                    data-icon="inline-end"
+                    className="text-muted-foreground"
+                  />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              onCloseAutoFocus={(event) => event.preventDefault()}
+            >
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  onClick={() => column.toggleSorting(false)}
+                  className={cn(sorted === "asc")}
+                >
+                  <ArrowUp />
+                  Asc
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => column.toggleSorting(true)}
+                  className={cn(sorted === "desc")}
+                >
+                  <ArrowDown />
+                  Desc
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  onClick={() => column.toggleVisibility(false)}
+                >
+                  <EyeOff />
+                  Hide
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+    </Subscribe>
   )
 }

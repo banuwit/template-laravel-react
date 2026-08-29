@@ -1,79 +1,86 @@
 "use client"
 
 import { createColumnHelper } from "@tanstack/react-table"
-import { ArrowUpDown } from "lucide-react"
-import { MoreHorizontal } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+
 import { type DataTableFeatures } from "./data-table-features"
 import { DataTableColumnHeader } from "./data-table-column-header"
+import { DataTableActions } from "./data-table-actions"
 
-// This type is used to define the shape of our data.
-// You can use a Zod schema here if you want.
 export type Payment = {
   id: string
+  name: string
+  email: string
+  gender: "male" | "female"
+  role: "Admin" | "Editor" | "Viewer" | "Manager" | "Analyst" | "Support"
   amount: number
   status: "pending" | "processing" | "success" | "failed"
-  email: string
 }
 
-// Use `accessor` for data columns and `display` for columns without one.
 const columnHelper = createColumnHelper<DataTableFeatures, Payment>()
 
 export const columns = columnHelper.columns([
-  columnHelper.accessor("status", {
-    header: "Status",
+  columnHelper.display({
+    id: "no",
+    header: "No.",
+    enableHiding: false,
+    cell: ({ row }) => {
+      const displayIndex = row.getDisplayIndex();
+
+      return (
+        <span className="tabular-nums text-muted-foreground">
+          {displayIndex === -1 ? '' : displayIndex + 1}
+        </span>
+      );
+    },
+  }),
+  columnHelper.accessor("name", {
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Name" />
+    ),
+  }),
+  columnHelper.accessor("gender", {
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Gender" />
+    ),
+    cell: ({ row }) => (
+      <span className="capitalize">{row.getValue("gender")}</span>
+    ),
+  }),
+  columnHelper.accessor("role", {
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Role" />
+    ),
   }),
   columnHelper.accessor("email", {
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Email" />
     ),
   }),
+  columnHelper.accessor("status", {
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Status" />
+    ),
+  }),
   columnHelper.accessor("amount", {
-    header: () => <div className="text-right">Amount</div>,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title="Amount"
+        className="justify-end"
+      />
+    ),
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue("amount"))
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
       }).format(amount)
- 
+
       return <div className="text-right font-medium">{formatted}</div>
     },
   }),
   columnHelper.display({
     id: "actions",
-    cell: ({ row }) => {
-      const payment = row.original
- 
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(payment.id)}
-            >
-              Copy payment ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-            <DropdownMenuItem>View payment details</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    },
+    cell: ({ row }) => <DataTableActions payment={row.original} />,
   }),
 ])
