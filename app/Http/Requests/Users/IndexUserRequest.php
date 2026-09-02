@@ -2,9 +2,12 @@
 
 namespace App\Http\Requests\Users;
 
+use App\Enums\Gender;
+use App\Enums\Status;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Enum;
 
 class IndexUserRequest extends FormRequest
 {
@@ -25,8 +28,16 @@ class IndexUserRequest extends FormRequest
     {
         return [
             'search' => ['nullable', 'string', 'max:255'],
-            'sort' => ['nullable', 'in:name,email,created_at'],
+            'sort' => ['nullable', 'in:name,email,department,position,join_date,status,created_at'],
             'direction' => ['nullable', 'in:asc,desc'],
+            'department' => ['nullable', 'array'],
+            'department.*' => ['string', 'max:100'],
+            'position' => ['nullable', 'array'],
+            'position.*' => ['string', 'max:100'],
+            'status' => ['nullable', 'array'],
+            'status.*' => [new Enum(Status::class)],
+            'gender' => ['nullable', 'array'],
+            'gender.*' => [new Enum(Gender::class)],
         ];
     }
 
@@ -38,13 +49,15 @@ class IndexUserRequest extends FormRequest
     }
 
     /**
-     * @return 'name'|'email'|'created_at'
+     * @return 'name'|'email'|'department'|'position'|'join_date'|'status'|'created_at'
      */
     public function sort(): string
     {
         $sort = $this->validated('sort');
 
-        return in_array($sort, ['name', 'email', 'created_at'], true) ? $sort : 'created_at';
+        return in_array($sort, ['name', 'email', 'department', 'position', 'join_date', 'status', 'created_at'], true)
+            ? $sort
+            : 'created_at';
     }
 
     /**
@@ -55,5 +68,37 @@ class IndexUserRequest extends FormRequest
         $direction = $this->validated('direction');
 
         return $direction === 'asc' ? 'asc' : 'desc';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function departments(): array
+    {
+        return $this->validated('department') ?? [];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function positions(): array
+    {
+        return $this->validated('position') ?? [];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function statuses(): array
+    {
+        return $this->validated('status') ?? [];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function genders(): array
+    {
+        return $this->validated('gender') ?? [];
     }
 }

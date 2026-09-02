@@ -8,7 +8,6 @@ import {
     MessageSquare,
     PanelRight,
     SlidersHorizontal,
-    SquareStack,
     Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -45,6 +44,11 @@ const mainNavItems: NavItem[] = [
         icon: Users,
     },
     {
+        title: 'Parameters',
+        href: parameters(),
+        icon: SlidersHorizontal,
+    },
+    {
         title: 'Example 1',
         href: example1(),
         icon: Layers,
@@ -63,11 +67,6 @@ const mainNavItems: NavItem[] = [
         title: 'Example 4',
         href: example4(),
         icon: Columns2,
-    },
-    {
-        title: 'Parameters',
-        href: parameters(),
-        icon: SlidersHorizontal,
     },
 ];
 

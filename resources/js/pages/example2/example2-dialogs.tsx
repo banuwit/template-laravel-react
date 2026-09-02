@@ -1,9 +1,9 @@
 import Example2Controller from '@/actions/App/Http/Controllers/Example2Controller';
-import ExampleRecordForm from '@/components/example-record-form';
 import {
     ExampleRecordDetailRows,
     exampleRecordFormValues,
 } from '@/components/example-record-detail';
+import ExampleRecordForm from '@/components/example-record-form';
 import {
     Dialog,
     DialogContent,

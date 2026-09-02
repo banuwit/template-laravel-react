@@ -25,12 +25,10 @@ test('a user can be created', function () {
     $actor = User::factory()->create();
 
     $this->actingAs($actor)
-        ->post(route('users.store'), [
+        ->post(route('users.store'), validUserPayload([
             'name' => 'New User',
             'email' => 'new@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ])
+        ]))
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('users.index'));
 
@@ -38,6 +36,9 @@ test('a user can be created', function () {
 
     expect($created)->not->toBeNull()
         ->and($created?->name)->toBe('New User')
+        ->and($created?->phone)->toBe('+1 555-0100')
+        ->and($created?->department)->toBe('Engineering')
+        ->and($created?->gender->value)->toBe('male')
         ->and(Hash::check('password', $created?->password))->toBeTrue();
 });
 
@@ -48,12 +49,10 @@ test('creating a user requires a unique email', function () {
 
     $this->actingAs($actor)
         ->from(route('users.create'))
-        ->post(route('users.store'), [
+        ->post(route('users.store'), validUserPayload([
             'name' => 'Duplicate',
             'email' => 'taken@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ])
+        ]))
         ->assertSessionHasErrors('email')
         ->assertRedirect(route('users.create'));
 });
@@ -128,10 +127,10 @@ test('a user can be updated without changing the password', function () {
     ]);
 
     $this->actingAs($actor)
-        ->put(route('users.update', $user), [
+        ->put(route('users.update', $user), validExampleRecordPayload([
             'name' => 'Updated Name',
             'email' => 'updated@example.com',
-        ])
+        ]))
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('users.index'));
 
@@ -150,12 +149,18 @@ test('a user password can be updated', function () {
     ]);
 
     $this->actingAs($actor)
-        ->put(route('users.update', $user), [
+        ->put(route('users.update', $user), validExampleRecordPayload([
             'name' => $user->name,
             'email' => $user->email,
+            'phone' => $user->phone,
+            'department' => $user->department,
+            'position' => $user->position,
+            'join_date' => $user->join_date?->toDateString(),
+            'gender' => $user->gender?->value,
+            'status' => $user->status->value,
             'password' => 'new-password',
             'password_confirmation' => 'new-password',
-        ])
+        ]))
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('users.index'));
 

@@ -1,118 +1,97 @@
-import { Subscribe, type Column, type RowData } from "@tanstack/react-table"
-import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "lucide-react"
+import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
+import type * as React from 'react';
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { TableHead } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
-import { type DataTableFeatures } from "./data-table-features"
+import type { SortDirection } from './data-table-header-sort';
 
-interface DataTableColumnHeaderProps<TData extends RowData, TValue>
-  extends React.HTMLAttributes<HTMLDivElement> {
-  column: Column<DataTableFeatures, TData, TValue>
-  title: string
+export interface DataTableHeaderDropdownProps {
+    /** The column this head sorts by. */
+    columnKey: string;
+    /** The column currently sorted, if any. */
+    sort?: string;
+    direction?: SortDirection;
+    onSort: (columnKey: string, direction: SortDirection) => void;
+    align?: 'left' | 'center' | 'right';
+    className?: string;
+    children: React.ReactNode;
 }
 
-function sortDirection(
-  sorting: Array<{ id: string; desc: boolean }>,
-  columnId: string,
-): false | "asc" | "desc" {
-  const sort = sorting.find((item) => item.id === columnId)
+/**
+ * A sortable `<TableHead>` that opens a dropdown with explicit Asc/Desc items,
+ * instead of `DataTableHeaderSort`'s single click-to-toggle button.
+ *
+ * Same props as `DataTableHeaderSort` — the two are interchangeable per
+ * column via `DataTableColumn.headerVariant`. Unlike `DataGridHeaderDropdown`,
+ * this has no column-visibility submenu: `data-table` doesn't have that
+ * feature, so the dropdown here is sort-only.
+ */
+export function DataTableHeaderDropdown({
+    columnKey,
+    sort,
+    direction = 'desc',
+    onSort,
+    align = 'left',
+    className,
+    children,
+}: DataTableHeaderDropdownProps) {
+    const isActive = sort === columnKey;
 
-  if (!sort) {
-    return false
-  }
-
-  return sort.desc ? "desc" : "asc"
-}
-
-export function DataTableColumnHeader<TData extends RowData, TValue>({
-  column,
-  title,
-  className,
-}: DataTableColumnHeaderProps<TData, TValue>) {
-  if (!column.getCanSort()) {
-    return <div className={cn(className)}>{title}</div>
-  }
-
-  return (
-    <Subscribe
-      source={column.table.store}
-      selector={(state) => sortDirection(state.sorting, column.id)}
-    >
-      {(sorted) => (
-        <div className={cn("flex items-center gap-2", className)}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                aria-sort={
-                  sorted === "desc"
-                    ? "descending"
-                    : sorted === "asc"
-                      ? "ascending"
-                      : "none"
-                }
-                className={cn(
-                  "-ml-3 h-8 aria-expanded:bg-transparent aria-expanded:text-foreground",
-                  "focus-visible:border-transparent focus-visible:ring-0",
-                  sorted && "text-primary font-bold",
-                )}
-              >
-                <span>{title}</span>
-                {sorted === "desc" ? (
-                  <ArrowDown data-icon="inline-end" />
-                ) : sorted === "asc" ? (
-                  <ArrowUp data-icon="inline-end" />
-                ) : (
-                  <ChevronsUpDown
-                    data-icon="inline-end"
-                    className="text-muted-foreground"
-                  />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              onCloseAutoFocus={(event) => event.preventDefault()}
-            >
-              <DropdownMenuGroup>
-                <DropdownMenuItem
-                  onClick={() => column.toggleSorting(false)}
-                  className={cn(sorted === "asc")}
+    return (
+        <TableHead
+            className={cn(align === 'right' && 'text-right', className)}
+            aria-sort={
+                isActive
+                    ? direction === 'asc'
+                        ? 'ascending'
+                        : 'descending'
+                    : 'none'
+            }
+        >
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                            '-ml-3 h-8 data-[state=open]:bg-accent',
+                            isActive
+                                ? 'font-semibold text-foreground'
+                                : 'font-normal text-muted-foreground',
+                        )}
+                    >
+                        <span>{children}</span>
+                        {isActive && direction === 'asc' ? (
+                            <ArrowUp className="text-primary" />
+                        ) : isActive ? (
+                            <ArrowDown className="text-primary" />
+                        ) : (
+                            <ChevronsUpDown className="opacity-40" />
+                        )}
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                    align="start"
+                    onCloseAutoFocus={(event) => event.preventDefault()}
                 >
-                  <ArrowUp />
-                  Asc
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => column.toggleSorting(true)}
-                  className={cn(sorted === "desc")}
-                >
-                  <ArrowDown />
-                  Desc
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem
-                  onClick={() => column.toggleVisibility(false)}
-                >
-                  <EyeOff />
-                  Hide
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )}
-    </Subscribe>
-  )
+                    <DropdownMenuItem onClick={() => onSort(columnKey, 'asc')}>
+                        <ArrowUp />
+                        Asc
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onSort(columnKey, 'desc')}>
+                        <ArrowDown />
+                        Desc
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </TableHead>
+    );
 }

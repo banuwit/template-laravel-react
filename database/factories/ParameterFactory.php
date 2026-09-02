@@ -30,4 +30,14 @@ class ParameterFactory extends Factory
             'sort_order' => $this->faker->numberBetween(0, 100),
         ];
     }
+
+    /**
+     * Indicate that the parameter is a locked system record.
+     */
+    public function system(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'is_system' => true,
+        ]);
+    }
 }

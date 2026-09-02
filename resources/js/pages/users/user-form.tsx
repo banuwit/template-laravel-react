@@ -10,11 +10,26 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 import { index as usersIndex } from '@/routes/users';
+import { GENDER_OPTIONS, STATUS_OPTIONS } from '@/types/example-record';
+import type { ExampleRecord } from '@/types/example-record';
+
+const selectClassName = cn(
+    'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs',
+    'transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
+    'disabled:cursor-not-allowed disabled:opacity-50',
+);
 
 type UserFormValues = {
     name: string;
     email: string;
+    phone?: string | null;
+    department?: string | null;
+    position?: string | null;
+    join_date?: string | null;
+    gender?: ExampleRecord['gender'] | null;
+    status?: ExampleRecord['status'] | null;
 };
 
 type Props = {
@@ -70,6 +85,122 @@ export default function UserForm({
                                 aria-invalid={errors.email ? true : undefined}
                             />
                             <FieldError>{errors.email}</FieldError>
+                        </Field>
+
+                        <Field data-invalid={errors.phone ? true : undefined}>
+                            <FieldLabel htmlFor="phone">Phone</FieldLabel>
+                            <Input
+                                id="phone"
+                                name="phone"
+                                type="tel"
+                                defaultValue={user?.phone ?? ''}
+                                required
+                                autoComplete="tel"
+                                placeholder="+1 555-0100"
+                                aria-invalid={errors.phone ? true : undefined}
+                            />
+                            <FieldError>{errors.phone}</FieldError>
+                        </Field>
+
+                        <Field
+                            data-invalid={errors.department ? true : undefined}
+                        >
+                            <FieldLabel htmlFor="department">
+                                Department
+                            </FieldLabel>
+                            <Input
+                                id="department"
+                                name="department"
+                                defaultValue={user?.department ?? ''}
+                                required
+                                autoComplete="organization"
+                                placeholder="Engineering"
+                                aria-invalid={
+                                    errors.department ? true : undefined
+                                }
+                            />
+                            <FieldError>{errors.department}</FieldError>
+                        </Field>
+
+                        <Field
+                            data-invalid={errors.position ? true : undefined}
+                        >
+                            <FieldLabel htmlFor="position">Position</FieldLabel>
+                            <Input
+                                id="position"
+                                name="position"
+                                defaultValue={user?.position ?? ''}
+                                required
+                                autoComplete="organization-title"
+                                placeholder="Software Engineer"
+                                aria-invalid={
+                                    errors.position ? true : undefined
+                                }
+                            />
+                            <FieldError>{errors.position}</FieldError>
+                        </Field>
+
+                        <Field
+                            data-invalid={errors.join_date ? true : undefined}
+                        >
+                            <FieldLabel htmlFor="join_date">
+                                Join date
+                            </FieldLabel>
+                            <Input
+                                id="join_date"
+                                name="join_date"
+                                type="date"
+                                defaultValue={user?.join_date ?? ''}
+                                required
+                                aria-invalid={
+                                    errors.join_date ? true : undefined
+                                }
+                            />
+                            <FieldError>{errors.join_date}</FieldError>
+                        </Field>
+
+                        <Field data-invalid={errors.gender ? true : undefined}>
+                            <FieldLabel htmlFor="gender">Gender</FieldLabel>
+                            <select
+                                id="gender"
+                                name="gender"
+                                defaultValue={user?.gender ?? 'male'}
+                                required
+                                className={selectClassName}
+                                aria-invalid={errors.gender ? true : undefined}
+                            >
+                                {GENDER_OPTIONS.map((option) => (
+                                    <option
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <FieldError>{errors.gender}</FieldError>
+                        </Field>
+
+                        <Field data-invalid={errors.status ? true : undefined}>
+                            <FieldLabel htmlFor="status">Status</FieldLabel>
+                            <select
+                                id="status"
+                                name="status"
+                                defaultValue={user?.status ?? 'active'}
+                                required
+                                className={selectClassName}
+                                aria-invalid={errors.status ? true : undefined}
+                            >
+                                {STATUS_OPTIONS.map((option) => (
+                                    <option
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <FieldError>{errors.status}</FieldError>
                         </Field>
 
                         <Field

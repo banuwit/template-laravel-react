@@ -1,455 +1,327 @@
-import { Head, Link, router } from '@inertiajs/react';
-import {
-    ArrowDown,
-    ArrowUp,
-    ArrowUpDown,
-    ChevronLeft,
-    ChevronRight,
-    Eye,
-    Pencil,
-    Plus,
-    Search,
-    SlidersHorizontal,
-} from 'lucide-react';
-import { useEffect, useState } from 'react';
-import Heading from '@/components/heading';
+import { Head, router, usePage } from '@inertiajs/react';
+import { createColumnHelper } from '@tanstack/react-table';
+import { Eye, Pencil, Plus } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { DataGridClient } from '@/components/data-grid/data-grid-client';
+import type { DataGridFeatures } from '@/components/data-grid/data-grid-features';
+import { DataGridHeaderSort } from '@/components/data-grid/data-grid-header-sort';
+import PageHeader from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import {
-    Empty,
-    EmptyContent,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyMedia,
-    EmptyTitle,
-} from '@/components/ui/empty';
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
-} from '@/components/ui/input-group';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { dashboard } from '@/routes';
-import {
-    create as parametersCreate,
-    edit as parametersEdit,
-    index as parametersIndex,
-    show as parametersShow,
-} from '@/routes/parameters';
-import type { Paginated } from '@/types';
+import { index as parametersIndex } from '@/routes/parameters';
+import type { BreadcrumbItem } from '@/types';
 import ParameterDeleteButton from './parameter-delete-button';
+import ParameterSheets from './parameter-sheets';
+import type { ParameterSheet } from './parameter-sheets';
 
-type ListedParameter = {
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Dashboard',
+        href: dashboard(),
+    },
+    {
+        title: 'Parameters',
+        href: parametersIndex(),
+    },
+];
+
+export type ListedParameter = {
     id: number;
     group: string;
     code: string;
     value: string;
+    description: string | null;
+    text_color: string | null;
+    bg_color: string | null;
     is_system: boolean;
     is_active: boolean;
     sort_order: number;
     created_at: string;
+    updated_at: string;
     can_delete: boolean;
 };
 
-type SortColumn = 'group' | 'code' | 'value' | 'sort_order' | 'created_at';
-
-type ParameterFilters = {
-    search: string;
-    sort: SortColumn;
-    direction: 'asc' | 'desc';
-};
-
 type Props = {
-    parameters: Paginated<ListedParameter>;
-    filters: ParameterFilters;
+    parameters: ListedParameter[];
 };
 
-function visit(
-    filters: ParameterFilters,
-    overrides: Partial<ParameterFilters> = {},
-) {
-    const search = overrides.search ?? filters.search;
-    const sort = overrides.sort ?? filters.sort;
-    const direction = overrides.direction ?? filters.direction;
-
-    router.get(
-        parametersIndex.url({
-            query: {
-                ...(search !== '' ? { search } : {}),
-                ...(sort !== 'created_at' ? { sort } : {}),
-                ...(direction !== 'desc' ? { direction } : {}),
-            },
-        }),
-        {},
-        {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        },
-    );
-}
-
-function SortIcon({
-    column,
-    filters,
+function RowActions({
+    record,
+    onView,
+    onEdit,
 }: {
-    column: SortColumn;
-    filters: ParameterFilters;
+    record: ListedParameter;
+    onView: () => void;
+    onEdit: () => void;
 }) {
-    if (filters.sort !== column) {
-        return <ArrowUpDown className="size-3.5 text-muted-foreground" />;
-    }
-
-    if (filters.direction === 'asc') {
-        return <ArrowUp className="size-3.5" />;
-    }
-
-    return <ArrowDown className="size-3.5" />;
-}
-
-function SortableHead({
-    column,
-    filters,
-    children,
-}: {
-    column: SortColumn;
-    filters: ParameterFilters;
-    children: string;
-}) {
-    const isActive = filters.sort === column;
-
     return (
-        <TableHead
-            aria-sort={
-                isActive
-                    ? filters.direction === 'asc'
-                        ? 'ascending'
-                        : 'descending'
-                    : 'none'
-            }
-        >
-            <button
-                type="button"
-                className="inline-flex items-center gap-1.5 rounded-sm font-medium hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
-                onClick={() =>
-                    visit(filters, {
-                        sort: column,
-                        direction:
-                            isActive && filters.direction === 'asc'
-                                ? 'desc'
-                                : 'asc',
-                    })
-                }
-            >
-                {children}
-                <SortIcon column={column} filters={filters} />
-            </button>
-        </TableHead>
+        <div className="flex items-center justify-end gap-1">
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="secondary"
+                        size="icon-sm"
+                        type="button"
+                        aria-label="View"
+                        onClick={onView}
+                    >
+                        <Eye />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>View</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="secondary"
+                        size="icon-sm"
+                        type="button"
+                        aria-label="Edit"
+                        onClick={onEdit}
+                    >
+                        <Pencil />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edit</TooltipContent>
+            </Tooltip>
+            {record.can_delete && <ParameterDeleteButton record={record} />}
+        </div>
     );
 }
 
-export default function ParametersIndex({ parameters, filters }: Props) {
-    const [search, setSearch] = useState(filters.search);
+const columnHelper = createColumnHelper<DataGridFeatures, ListedParameter>();
 
-    useEffect(() => {
-        const nextSearch = search.trim();
+export default function ParametersIndex({ parameters }: Props) {
+    const page = usePage();
+    const [sheet, setSheet] = useState<ParameterSheet>({ type: 'closed' });
 
-        if (nextSearch === filters.search) {
-            return;
+    function closeSheet() {
+        setSheet({ type: 'closed' });
+
+        if (Object.keys(page.props.errors ?? {}).length > 0) {
+            router.get(
+                parametersIndex.url(),
+                {},
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                },
+            );
         }
+    }
 
-        const timeoutId = window.setTimeout(() => {
-            visit(filters, { search: nextSearch });
-        }, 300);
+    const groupOptions = useMemo(
+        () =>
+            Array.from(new Set(parameters.map((record) => record.group)))
+                .sort()
+                .map((group) => ({ value: group, label: group })),
+        [parameters],
+    );
 
-        return () => window.clearTimeout(timeoutId);
-    }, [search, filters]);
+    const columns = useMemo(
+        () =>
+            columnHelper.columns([
+                columnHelper.display({
+                    id: 'no',
+                    header: 'No.',
+                    enableHiding: false,
+                    cell: ({ row }) => {
+                        const displayIndex = row.getDisplayIndex();
+
+                        return (
+                            <span className="text-muted-foreground tabular-nums">
+                                {displayIndex === -1 ? '' : displayIndex + 1}
+                            </span>
+                        );
+                    },
+                }),
+                columnHelper.accessor('group', {
+                    header: ({ column }) => (
+                        <DataGridHeaderSort column={column} title="Group" />
+                    ),
+                    cell: ({ getValue }) => (
+                        <Badge variant="secondary">{getValue()}</Badge>
+                    ),
+                    filterFn: 'multiValue',
+                }),
+                columnHelper.accessor('code', {
+                    header: ({ column }) => (
+                        <DataGridHeaderSort column={column} title="Code" />
+                    ),
+                    cell: ({ row }) => (
+                        <button
+                            type="button"
+                            className="text-left font-medium hover:underline"
+                            onClick={() =>
+                                setSheet({ type: 'view', record: row.original })
+                            }
+                        >
+                            {row.original.code}
+                        </button>
+                    ),
+                }),
+                columnHelper.accessor('value', {
+                    header: ({ column }) => (
+                        <DataGridHeaderSort column={column} title="Value" />
+                    ),
+                    cell: ({ row }) => {
+                        const record = row.original;
+
+                        return record.text_color || record.bg_color ? (
+                            <span
+                                className="inline-flex rounded-md border px-2 py-0.5 text-xs font-medium"
+                                style={{
+                                    color: record.text_color ?? undefined,
+                                    backgroundColor:
+                                        record.bg_color ?? undefined,
+                                }}
+                            >
+                                {record.value}
+                            </span>
+                        ) : (
+                            record.value
+                        );
+                    },
+                }),
+                columnHelper.accessor(
+                    (record) => (record.is_active ? 'active' : 'inactive'),
+                    {
+                        id: 'is_active',
+                        header: ({ column }) => (
+                            <DataGridHeaderSort
+                                column={column}
+                                title="Status"
+                            />
+                        ),
+                        cell: ({ getValue }) => (
+                            <Badge
+                                variant={
+                                    getValue() === 'active'
+                                        ? 'default'
+                                        : 'secondary'
+                                }
+                            >
+                                {getValue() === 'active'
+                                    ? 'Active'
+                                    : 'Inactive'}
+                            </Badge>
+                        ),
+                        filterFn: 'multiValue',
+                    },
+                ),
+                columnHelper.accessor('sort_order', {
+                    header: ({ column }) => (
+                        <DataGridHeaderSort column={column} title="Order" />
+                    ),
+                }),
+                columnHelper.display({
+                    id: 'actions',
+                    cell: ({ row }) => (
+                        <RowActions
+                            record={row.original}
+                            onView={() =>
+                                setSheet({ type: 'view', record: row.original })
+                            }
+                            onEdit={() =>
+                                setSheet({ type: 'edit', record: row.original })
+                            }
+                        />
+                    ),
+                }),
+            ]),
+        [],
+    );
 
     return (
         <>
             <Head title="Parameters" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                    <Heading
-                        variant="small"
+            <ParameterSheets
+                sheet={sheet}
+                onSheetChange={(next) => {
+                    if (next.type === 'closed') {
+                        closeSheet();
+
+                        return;
+                    }
+
+                    setSheet(next);
+                }}
+            >
+                <div className="flex min-h-0 flex-1 flex-col gap-6 p-4">
+                    <PageHeader
                         title="Parameters"
-                        description="Manage reference values and system parameters."
-                    />
-
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                        <InputGroup className="w-full sm:max-w-xs">
-                            <InputGroupAddon>
-                                <Search />
-                            </InputGroupAddon>
-                            <InputGroupInput
-                                type="search"
-                                value={search}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
-                                }
-                                placeholder="Search group, code, or value"
-                                aria-label="Search parameters"
-                            />
-                        </InputGroup>
-
-                        <Button asChild>
-                            <Link href={parametersCreate()}>
+                        breadcrumbs={breadcrumbs}
+                        actions={
+                            <Button
+                                type="button"
+                                onClick={() => setSheet({ type: 'create' })}
+                            >
                                 <Plus data-icon="inline-start" />
                                 Add New
-                            </Link>
-                        </Button>
-                    </div>
+                            </Button>
+                        }
+                    />
+
+                    <Card className="gap-0 overflow-hidden py-0">
+                        <CardContent className="p-4">
+                            <DataGridClient
+                                columns={columns}
+                                data={parameters}
+                                defaultSorting={[
+                                    { id: 'sort_order', desc: false },
+                                ]}
+                                showVisibilityToggle={false}
+                                toolbar={{
+                                    searches: [
+                                        {
+                                            key: 'code',
+                                            placeholder: 'Search code...',
+                                        },
+                                    ],
+                                    facets: [
+                                        {
+                                            key: 'group',
+                                            title: 'Group',
+                                            options: groupOptions,
+                                        },
+                                        {
+                                            key: 'is_active',
+                                            title: 'Status',
+                                            options: [
+                                                {
+                                                    value: 'active',
+                                                    label: 'Active',
+                                                },
+                                                {
+                                                    value: 'inactive',
+                                                    label: 'Inactive',
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                }}
+                                emptyTitle="No parameters yet"
+                                emptyDescription="Create a record to add the first one to this list."
+                                emptyFilteredTitle="No matching parameters"
+                                emptyFilteredDescription="Try a different search term, or clear the filters to see every record."
+                            />
+                        </CardContent>
+                    </Card>
                 </div>
-
-                <Card className="gap-0 overflow-hidden py-0">
-                    <CardHeader className="border-b py-4">
-                        <CardTitle>All parameters</CardTitle>
-                        <CardDescription>
-                            {parameters.total === 1
-                                ? '1 parameter'
-                                : `${parameters.total} parameters`}
-                        </CardDescription>
-                    </CardHeader>
-
-                    <CardContent className="px-0">
-                        {parameters.data.length === 0 ? (
-                            <Empty className="border-0">
-                                <EmptyHeader>
-                                    <EmptyMedia variant="icon">
-                                        <SlidersHorizontal />
-                                    </EmptyMedia>
-                                    <EmptyTitle>
-                                        {filters.search
-                                            ? 'No matching parameters'
-                                            : 'No parameters yet'}
-                                    </EmptyTitle>
-                                    <EmptyDescription>
-                                        {filters.search
-                                            ? 'Try a different group, code, or value, or clear the search to see everything.'
-                                            : 'Create a parameter to add the first entry to this list.'}
-                                    </EmptyDescription>
-                                </EmptyHeader>
-                                {!filters.search && (
-                                    <EmptyContent>
-                                        <Button asChild>
-                                            <Link href={parametersCreate()}>
-                                                <Plus data-icon="inline-start" />
-                                                Add New
-                                            </Link>
-                                        </Button>
-                                    </EmptyContent>
-                                )}
-                            </Empty>
-                        ) : (
-                            <Table className="[&_td]:px-4 [&_th]:px-4">
-                                <TableHeader>
-                                    <TableRow>
-                                        <SortableHead
-                                            column="group"
-                                            filters={filters}
-                                        >
-                                            Group
-                                        </SortableHead>
-                                        <SortableHead
-                                            column="code"
-                                            filters={filters}
-                                        >
-                                            Code
-                                        </SortableHead>
-                                        <SortableHead
-                                            column="value"
-                                            filters={filters}
-                                        >
-                                            Value
-                                        </SortableHead>
-                                        <TableHead>Status</TableHead>
-                                        <SortableHead
-                                            column="sort_order"
-                                            filters={filters}
-                                        >
-                                            Order
-                                        </SortableHead>
-                                        <TableHead className="text-right">
-                                            <span className="sr-only">
-                                                Actions
-                                            </span>
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {parameters.data.map((parameter) => (
-                                        <TableRow key={parameter.id}>
-                                            <TableCell className="text-muted-foreground">
-                                                {parameter.group}
-                                            </TableCell>
-                                            <TableCell>
-                                                <span className="font-medium">
-                                                    <Link
-                                                        href={parametersShow(
-                                                            parameter.id,
-                                                        )}
-                                                        className="hover:underline"
-                                                    >
-                                                        {parameter.code}
-                                                    </Link>
-                                                </span>
-                                                {parameter.is_system && (
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="ml-2"
-                                                    >
-                                                        System
-                                                    </Badge>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground">
-                                                {parameter.value}
-                                            </TableCell>
-                                            <TableCell>
-                                                {parameter.is_active ? (
-                                                    <Badge variant="secondary">
-                                                        Active
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge variant="outline">
-                                                        Inactive
-                                                    </Badge>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground">
-                                                {parameter.sort_order}
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center justify-end gap-1">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        asChild
-                                                    >
-                                                        <Link
-                                                            href={parametersShow(
-                                                                parameter.id,
-                                                            )}
-                                                        >
-                                                            <Eye data-icon="inline-start" />
-                                                            View
-                                                        </Link>
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        asChild
-                                                    >
-                                                        <Link
-                                                            href={parametersEdit(
-                                                                parameter.id,
-                                                            )}
-                                                        >
-                                                            <Pencil data-icon="inline-start" />
-                                                            Edit
-                                                        </Link>
-                                                    </Button>
-                                                    {parameter.can_delete && (
-                                                        <ParameterDeleteButton
-                                                            parameter={
-                                                                parameter
-                                                            }
-                                                        />
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        )}
-                    </CardContent>
-
-                    {parameters.total > 0 && (
-                        <CardFooter className="flex flex-col gap-3 border-t py-4 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="text-sm text-muted-foreground">
-                                Showing {parameters.from}–{parameters.to} of{' '}
-                                {parameters.total}
-                            </p>
-
-                            <div className="flex items-center gap-2">
-                                {parameters.prev_page_url ? (
-                                    <Button variant="outline" size="sm" asChild>
-                                        <Link
-                                            href={parameters.prev_page_url}
-                                            preserveState
-                                            preserveScroll
-                                        >
-                                            <ChevronLeft data-icon="inline-start" />
-                                            Previous
-                                        </Link>
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled
-                                    >
-                                        <ChevronLeft data-icon="inline-start" />
-                                        Previous
-                                    </Button>
-                                )}
-
-                                {parameters.next_page_url ? (
-                                    <Button variant="outline" size="sm" asChild>
-                                        <Link
-                                            href={parameters.next_page_url}
-                                            preserveState
-                                            preserveScroll
-                                        >
-                                            Next
-                                            <ChevronRight data-icon="inline-end" />
-                                        </Link>
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled
-                                    >
-                                        Next
-                                        <ChevronRight data-icon="inline-end" />
-                                    </Button>
-                                )}
-                            </div>
-                        </CardFooter>
-                    )}
-                </Card>
-            </div>
+            </ParameterSheets>
         </>
     );
 }
 
 ParametersIndex.layout = {
-    breadcrumbs: [
-        {
-            title: 'Dashboard',
-            href: dashboard(),
-        },
-        {
-            title: 'Parameters',
-            href: parametersIndex(),
-        },
-    ],
+    breadcrumbs,
 };

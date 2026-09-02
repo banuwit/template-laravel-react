@@ -6,7 +6,8 @@ use App\Models\Example1;
 use App\Models\Example2;
 use App\Models\Example3;
 use App\Models\Example4;
-use App\Models\User;
+use Database\Seeders\ParameterSeeder;
+use Database\Seeders\UserSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -19,9 +20,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->call([
+            UserSeeder::class,
+            ParameterSeeder::class,
         ]);
 
         Example1::factory()->createMany([

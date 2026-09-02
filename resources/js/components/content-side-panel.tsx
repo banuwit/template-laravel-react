@@ -37,8 +37,8 @@ function ContentSidePanelLayout({
                     'flex min-h-0 min-w-0 flex-col overflow-hidden bg-popover text-popover-foreground',
                     'md:border-l md:transition-opacity md:duration-200 md:ease-in-out',
                     open
-                        ? 'w-full border-t animate-in fade-in-0 slide-in-from-bottom-4 duration-200 md:border-t-0 md:opacity-100 md:slide-in-from-right-4'
-                        : 'hidden md:flex md:pointer-events-none md:opacity-0',
+                        ? 'w-full animate-in border-t duration-200 fade-in-0 slide-in-from-bottom-4 md:border-t-0 md:opacity-100 md:slide-in-from-right-4'
+                        : 'hidden md:pointer-events-none md:flex md:opacity-0',
                 )}
             >
                 <div className="flex h-full w-full min-w-0 flex-col md:min-w-[28rem]">
@@ -119,7 +119,10 @@ function ContentSidePanelBody({
     return (
         <div
             data-slot="content-side-panel-body"
-            className={cn('flex flex-1 flex-col gap-4 overflow-y-auto p-4', className)}
+            className={cn(
+                'flex flex-1 flex-col gap-4 overflow-y-auto p-4',
+                className,
+            )}
             {...props}
         />
     );

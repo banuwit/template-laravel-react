@@ -2,8 +2,8 @@ import { Subscribe } from '@tanstack/react-table';
 import type {
     Column,
     ColumnVisibilityState,
-    ReactTable,
     RowData,
+    Table,
 } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
 
@@ -44,7 +44,7 @@ interface DataGridHeaderDropdownProps<
      * off for every column at once instead of passing it per column.
      */
     showVisibilityToggle?: boolean;
-    table?: ReactTable<DataGridFeatures, TData>;
+    table?: Table<DataGridFeatures, TData>;
     columnVisibility?: ColumnVisibilityState;
 }
 

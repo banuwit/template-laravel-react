@@ -23,15 +23,29 @@ class UserController extends Controller
         $actor = $request->user();
 
         $users = User::query()
-            ->select(['id', 'name', 'email', 'email_verified_at', 'created_at'])
+            ->select([
+                'id',
+                'name',
+                'email',
+                'phone',
+                'department',
+                'position',
+                'join_date',
+                'gender',
+                'status',
+                'email_verified_at',
+                'created_at',
+            ])
             ->search($request->search())
+            ->when($request->departments(), fn ($query, array $departments) => $query->whereIn('department', $departments))
+            ->when($request->positions(), fn ($query, array $positions) => $query->whereIn('position', $positions))
+            ->when($request->statuses(), fn ($query, array $statuses) => $query->whereIn('status', $statuses))
+            ->when($request->genders(), fn ($query, array $genders) => $query->whereIn('gender', $genders))
             ->orderBy($request->sort(), $request->direction())
             ->paginate(10)
             ->withQueryString()
             ->through(fn (User $user): array => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
+                ...$this->profileAttributes($user),
                 'email_verified_at' => $user->email_verified_at?->toIso8601String(),
                 'created_at' => $user->created_at?->toIso8601String(),
                 'can_delete' => $actor !== null && $actor->can('delete', $user),
@@ -43,7 +57,21 @@ class UserController extends Controller
                 'search' => $request->search() ?? '',
                 'sort' => $request->sort(),
                 'direction' => $request->direction(),
+                'department' => $request->departments(),
+                'position' => $request->positions(),
+                'status' => $request->statuses(),
+                'gender' => $request->genders(),
             ],
+            'departmentOptions' => User::query()
+                ->whereNotNull('department')
+                ->distinct()
+                ->orderBy('department')
+                ->pluck('department'),
+            'positionOptions' => User::query()
+                ->whereNotNull('position')
+                ->distinct()
+                ->orderBy('position')
+                ->pluck('position'),
         ]);
     }
 
@@ -70,9 +98,7 @@ class UserController extends Controller
 
         return Inertia::render('users/show', [
             'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
+                ...$this->profileAttributes($user),
                 'email_verified_at' => $user->email_verified_at?->toIso8601String(),
                 'created_at' => $user->created_at?->toIso8601String(),
                 'updated_at' => $user->updated_at?->toIso8601String(),
@@ -87,7 +113,17 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request): RedirectResponse
     {
-        User::create($request->safe()->only(['name', 'email', 'password']));
+        User::create($request->safe()->only([
+            'name',
+            'email',
+            'password',
+            'phone',
+            'department',
+            'position',
+            'join_date',
+            'gender',
+            'status',
+        ]));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('User created.')]);
 
@@ -102,11 +138,7 @@ class UserController extends Controller
         Gate::authorize('update', $user);
 
         return Inertia::render('users/edit', [
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-            ],
+            'user' => $this->profileAttributes($user),
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
         ]);
     }
@@ -141,5 +173,23 @@ class UserController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('User deleted.')]);
 
         return to_route('users.index');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function profileAttributes(User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'department' => $user->department,
+            'position' => $user->position,
+            'join_date' => $user->join_date?->toDateString(),
+            'gender' => $user->gender?->value,
+            'status' => $user->status->value,
+        ];
     }
 }

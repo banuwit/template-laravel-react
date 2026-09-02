@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
-import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -51,11 +50,7 @@ import { index as example3 } from '@/routes/example3';
 import { index as example4 } from '@/routes/example4';
 import { index as parameters } from '@/routes/parameters';
 import { index as users } from '@/routes/users';
-import type { BreadcrumbItem, NavItem } from '@/types';
-
-type Props = {
-    breadcrumbs?: BreadcrumbItem[];
-};
+import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
     {
@@ -67,6 +62,11 @@ const mainNavItems: NavItem[] = [
         title: 'Users',
         href: users(),
         icon: Users,
+    },
+    {
+        title: 'Parameters',
+        href: parameters(),
+        icon: SlidersHorizontal,
     },
     {
         title: 'Example 1',
@@ -88,11 +88,6 @@ const mainNavItems: NavItem[] = [
         href: example4(),
         icon: Columns2,
     },
-    {
-        title: 'Parameters',
-        href: parameters(),
-        icon: SlidersHorizontal,
-    },
 ];
 
 const rightNavItems: NavItem[] = [
@@ -111,7 +106,7 @@ const rightNavItems: NavItem[] = [
 const activeItemStyles =
     'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
 
-export function AppHeader({ breadcrumbs = [] }: Props) {
+export function AppHeader() {
     const page = usePage();
     const { auth } = page.props;
     const getInitials = useInitials();
@@ -284,13 +279,6 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                     </div>
                 </div>
             </div>
-            {breadcrumbs.length > 1 && (
-                <div className="flex w-full border-b border-sidebar-border/70">
-                    <div className="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl">
-                        <Breadcrumbs breadcrumbs={breadcrumbs} />
-                    </div>
-                </div>
-            )}
         </>
     );
 }

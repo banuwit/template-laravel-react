@@ -1,18 +1,13 @@
 import { format } from 'date-fns';
 import type { ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
-import {
-    genderLabel,
-    statusLabel,
-    type ExampleRecord,
-    type ExampleRecordFormValues,
+import { genderLabel, statusLabel } from '@/types/example-record';
+import type {
+    ExampleRecord,
+    ExampleRecordFormValues,
 } from '@/types/example-record';
 
-export function ExampleRecordDetailRows({
-    record,
-}: {
-    record: ExampleRecord;
-}) {
+export function ExampleRecordDetailRows({ record }: { record: ExampleRecord }) {
     return (
         <dl className="flex flex-col gap-3">
             <DetailRow label="Name">{record.name}</DetailRow>

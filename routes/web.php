@@ -13,7 +13,7 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
     Route::resource('users', UserController::class);
-    Route::resource('parameters', ParameterController::class);
+    Route::resource('parameters', ParameterController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('example1', Example1Controller::class);
     Route::resource('example2', Example2Controller::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('example3', Example3Controller::class)->only(['index', 'store', 'update', 'destroy']);

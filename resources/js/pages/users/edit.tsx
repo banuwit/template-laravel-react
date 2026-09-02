@@ -16,6 +16,12 @@ type EditableUser = {
     id: number;
     name: string;
     email: string;
+    phone: string | null;
+    department: string | null;
+    position: string | null;
+    join_date: string | null;
+    gender: 'male' | 'female' | 'other' | null;
+    status: 'active' | 'inactive';
 };
 
 type Props = {

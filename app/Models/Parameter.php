@@ -39,6 +39,15 @@ class Parameter extends Model
     use HasFactory, SoftDeletes;
 
     /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_system' => false,
+        'is_active' => true,
+        'sort_order' => 0,
+    ];
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

@@ -8,12 +8,9 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
-import {
-    GENDER_OPTIONS,
-    STATUS_OPTIONS,
-    type ExampleRecordFormValues,
-} from '@/types/example-record';
 import { cn } from '@/lib/utils';
+import { GENDER_OPTIONS, STATUS_OPTIONS } from '@/types/example-record';
+import type { ExampleRecordFormValues } from '@/types/example-record';
 
 const selectClassName = cn(
     'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs',
@@ -134,7 +131,9 @@ export default function ExampleRecordForm({
                                 required
                                 autoComplete="organization-title"
                                 placeholder="Software Engineer"
-                                aria-invalid={errors.position ? true : undefined}
+                                aria-invalid={
+                                    errors.position ? true : undefined
+                                }
                             />
                             <FieldError>{errors.position}</FieldError>
                         </Field>
@@ -151,7 +150,9 @@ export default function ExampleRecordForm({
                                 type="date"
                                 defaultValue={record?.join_date}
                                 required
-                                aria-invalid={errors.join_date ? true : undefined}
+                                aria-invalid={
+                                    errors.join_date ? true : undefined
+                                }
                             />
                             <FieldError>{errors.join_date}</FieldError>
                         </Field>

@@ -7,28 +7,28 @@ Starter kit full-stack yang menggabungkan **Laravel 13**, **Inertia.js v3**, dan
 - **Autentikasi lengkap** — login, register, verifikasi email, reset password, konfirmasi password, dan two-factor authentication (2FA) dengan recovery codes.
 - **Manajemen profil & keamanan** — update profil, ganti password, kelola 2FA di halaman Settings.
 - **Contoh CRUD dengan 4 pola UI berbeda**, masing-masing punya implementasi kanonik di codebase:
-  | Resource | Pola UI |
-  |---|---|
-  | `users` | Halaman terpisah (`create.tsx` / `edit.tsx` / `show.tsx`) |
-  | `example1` | Halaman terpisah (sama seperti `users`) |
-  | `example2` | Dialog (shadcn `Dialog`) |
-  | `example3` | Sheet (Radix `Sheet`, overlay dari kanan) |
-  | `example4` | Panel inline (non-modal, menyusutkan area konten) |
+    | Resource   | Pola UI                                                   |
+    | ---------- | --------------------------------------------------------- |
+    | `users`    | Halaman terpisah (`create.tsx` / `edit.tsx` / `show.tsx`) |
+    | `example1` | Halaman terpisah (sama seperti `users`)                   |
+    | `example2` | Dialog (shadcn `Dialog`)                                  |
+    | `example3` | Sheet (Radix `Sheet`, overlay dari kanan)                 |
+    | `example4` | Panel inline (non-modal, menyusutkan area konten)         |
 - **List page baku**: pencarian (debounced), sorting dengan whitelist kolom, dan pagination — semua sinkron dengan query string URL.
 - **Typed routing end-to-end** lewat [Laravel Wayfinder](https://github.com/laravel/wayfinder) — tidak ada URL yang di-hardcode di frontend.
 - Test suite [Pest](https://pestphp.com/) yang mencakup seluruh alur auth dan CRUD.
 
 ## Tech Stack
 
-| Layer | Teknologi |
-|---|---|
-| Backend | PHP 8.5, Laravel 13, Laravel Fortify, Laravel Wayfinder |
-| Frontend | React 19, TypeScript, Inertia.js v3 |
-| Styling | Tailwind CSS v4, shadcn/ui, Radix UI |
-| Build tool | Vite |
-| Database | SQLite (default, mudah diganti ke MySQL/PostgreSQL) |
-| Testing | Pest, PHPUnit |
-| Linting | Laravel Pint, PHPStan (Larastan), ESLint, Prettier |
+| Layer      | Teknologi                                               |
+| ---------- | ------------------------------------------------------- |
+| Backend    | PHP 8.5, Laravel 13, Laravel Fortify, Laravel Wayfinder |
+| Frontend   | React 19, TypeScript, Inertia.js v3                     |
+| Styling    | Tailwind CSS v4, shadcn/ui, Radix UI                    |
+| Build tool | Vite                                                    |
+| Database   | SQLite (default, mudah diganti ke MySQL/PostgreSQL)     |
+| Testing    | Pest, PHPUnit                                           |
+| Linting    | Laravel Pint, PHPStan (Larastan), ESLint, Prettier      |
 
 ## Persyaratan
 
@@ -123,33 +123,33 @@ tests/
 
 ### Build & Development
 
-| Perintah | Keterangan |
-|---|---|
-| `composer run dev` | Jalankan app + queue + Vite dev server |
-| `npm run dev` | Vite dev server saja |
-| `npm run build` | Build asset frontend untuk production |
-| `npm run build:ssr` | Build termasuk bundle SSR |
+| Perintah            | Keterangan                             |
+| ------------------- | -------------------------------------- |
+| `composer run dev`  | Jalankan app + queue + Vite dev server |
+| `npm run dev`       | Vite dev server saja                   |
+| `npm run build`     | Build asset frontend untuk production  |
+| `npm run build:ssr` | Build termasuk bundle SSR              |
 
 ### Lint, Format, dan Type Checking
 
-| Perintah | Keterangan |
-|---|---|
-| `composer run lint` | Format kode PHP dengan Pint |
-| `vendor/bin/pint --dirty` | Pint hanya untuk file yang berubah |
-| `npm run lint` | ESLint (auto-fix) |
-| `npm run format` | Prettier (auto-fix) untuk `resources/` |
-| `npm run types:check` | Type checking TypeScript (`tsc --noEmit`) |
-| `composer run types:check` | Static analysis PHP dengan PHPStan/Larastan |
-| `composer run ci:check` | Jalankan seluruh gate CI (lint, format, types, test) |
+| Perintah                   | Keterangan                                           |
+| -------------------------- | ---------------------------------------------------- |
+| `composer run lint`        | Format kode PHP dengan Pint                          |
+| `vendor/bin/pint --dirty`  | Pint hanya untuk file yang berubah                   |
+| `npm run lint`             | ESLint (auto-fix)                                    |
+| `npm run format`           | Prettier (auto-fix) untuk `resources/`               |
+| `npm run types:check`      | Type checking TypeScript (`tsc --noEmit`)            |
+| `composer run types:check` | Static analysis PHP dengan PHPStan/Larastan          |
+| `composer run ci:check`    | Jalankan seluruh gate CI (lint, format, types, test) |
 
 ### Testing
 
-| Perintah | Keterangan |
-|---|---|
-| `php artisan test --compact` | Jalankan seluruh test suite (Pest) |
-| `php artisan test --compact --filter=nama_test` | Jalankan test tertentu |
-| `php artisan test --compact tests/Feature/UserCrudTest.php` | Jalankan satu file test |
-| `composer run test` | `config:clear` + lint check + types check + full test suite |
+| Perintah                                                    | Keterangan                                                  |
+| ----------------------------------------------------------- | ----------------------------------------------------------- |
+| `php artisan test --compact`                                | Jalankan seluruh test suite (Pest)                          |
+| `php artisan test --compact --filter=nama_test`             | Jalankan test tertentu                                      |
+| `php artisan test --compact tests/Feature/UserCrudTest.php` | Jalankan satu file test                                     |
+| `composer run test`                                         | `config:clear` + lint check + types check + full test suite |
 
 ### Wayfinder (Route Generation)
 
@@ -161,7 +161,7 @@ php artisan wayfinder:generate --with-form --no-interaction
 
 ## Menambah Resource CRUD Baru
 
-Proyek ini punya konvensi baku untuk halaman list + CRUD Inertia (lihat `.agents/rules/crud-pages.md` untuk detail lengkap). Ringkasnya:
+Proyek ini punya konvensi baku untuk halaman list + CRUD Inertia (lihat `.agents/rules/crud-pattern.md` untuk detail lengkap). Ringkasnya:
 
 1. Scaffold controller, Form Request (`Index{Model}Request`), Policy, dan test lewat Artisan.
 2. Daftarkan route di `routes/web.php` di dalam group `auth`+`verified`.
@@ -174,12 +174,12 @@ Proyek ini punya konvensi baku untuk halaman list + CRUD Inertia (lihat `.agents
 
 Salin `.env.example` ke `.env` dan sesuaikan sesuai kebutuhan. Variabel penting:
 
-| Variabel | Keterangan |
-|---|---|
-| `APP_URL` | URL aplikasi (dipakai untuk generate link absolut) |
-| `DB_CONNECTION` | Default `sqlite`; ubah ke `mysql`/`pgsql` bila perlu, lalu isi `DB_HOST`, `DB_DATABASE`, dll. |
-| `SESSION_DRIVER`, `QUEUE_CONNECTION`, `CACHE_STORE` | Default `database` — bisa diganti ke `redis` untuk production |
-| `MAIL_MAILER` | Default `log` untuk development; ganti ke SMTP/Postmark/Resend untuk production |
+| Variabel                                            | Keterangan                                                                                    |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `APP_URL`                                           | URL aplikasi (dipakai untuk generate link absolut)                                            |
+| `DB_CONNECTION`                                     | Default `sqlite`; ubah ke `mysql`/`pgsql` bila perlu, lalu isi `DB_HOST`, `DB_DATABASE`, dll. |
+| `SESSION_DRIVER`, `QUEUE_CONNECTION`, `CACHE_STORE` | Default `database` — bisa diganti ke `redis` untuk production                                 |
+| `MAIL_MAILER`                                       | Default `log` untuk development; ganti ke SMTP/Postmark/Resend untuk production               |
 
 ## Kontribusi
 

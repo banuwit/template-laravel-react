@@ -17,12 +17,19 @@ import { Separator } from '@/components/ui/separator';
 import { useInitials } from '@/hooks/use-initials';
 import { dashboard } from '@/routes';
 import { index as usersIndex, show } from '@/routes/users';
+import { genderLabel, statusLabel } from '@/types/example-record';
 import UserDeleteButton from './user-delete-button';
 
 type ShownUser = {
     id: number;
     name: string;
     email: string;
+    phone: string | null;
+    department: string | null;
+    position: string | null;
+    join_date: string | null;
+    gender: 'male' | 'female' | 'other' | null;
+    status: 'active' | 'inactive';
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
@@ -124,7 +131,50 @@ export default function UsersShow({ user }: Props) {
                             <Separator />
                             <DetailRow label="Email">{user.email}</DetailRow>
                             <Separator />
+                            <DetailRow label="Phone">
+                                {user.phone ?? '—'}
+                            </DetailRow>
+                            <Separator />
+                            <DetailRow label="Department">
+                                {user.department ?? '—'}
+                            </DetailRow>
+                            <Separator />
+                            <DetailRow label="Position">
+                                {user.position ?? '—'}
+                            </DetailRow>
+                            <Separator />
+                            <DetailRow label="Join date">
+                                {user.join_date
+                                    ? format(
+                                          new Date(user.join_date),
+                                          'MMM d, yyyy',
+                                      )
+                                    : '—'}
+                            </DetailRow>
+                            <Separator />
+                            <DetailRow label="Gender">
+                                {user.gender ? (
+                                    <Badge variant="secondary">
+                                        {genderLabel(user.gender)}
+                                    </Badge>
+                                ) : (
+                                    '—'
+                                )}
+                            </DetailRow>
+                            <Separator />
                             <DetailRow label="Status">
+                                <Badge
+                                    variant={
+                                        user.status === 'active'
+                                            ? 'default'
+                                            : 'secondary'
+                                    }
+                                >
+                                    {statusLabel(user.status)}
+                                </Badge>
+                            </DetailRow>
+                            <Separator />
+                            <DetailRow label="Email status">
                                 {user.email_verified_at ? (
                                     <Badge variant="secondary">Verified</Badge>
                                 ) : (

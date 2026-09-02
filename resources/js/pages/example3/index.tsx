@@ -50,11 +50,11 @@ import { useInitials } from '@/hooks/use-initials';
 import { dashboard } from '@/routes';
 import { index as example3Index } from '@/routes/example3';
 import type { Paginated } from '@/types';
-import {
-    statusLabel,
-    type ExampleFilters,
-    type ExampleRecord,
-    type ExampleSortColumn,
+import { statusLabel } from '@/types/example-record';
+import type {
+    ExampleFilters,
+    ExampleRecord,
+    ExampleSortColumn,
 } from '@/types/example-record';
 import Example3DeleteButton from './example3-delete-button';
 import Example3Sheets from './example3-sheets';

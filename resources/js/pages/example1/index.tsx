@@ -55,11 +55,11 @@ import {
     show as example1Show,
 } from '@/routes/example1';
 import type { Paginated } from '@/types';
-import {
-    statusLabel,
-    type ExampleFilters,
-    type ExampleRecord,
-    type ExampleSortColumn,
+import { statusLabel } from '@/types/example-record';
+import type {
+    ExampleFilters,
+    ExampleRecord,
+    ExampleSortColumn,
 } from '@/types/example-record';
 import Example1DeleteButton from './example1-delete-button';
 

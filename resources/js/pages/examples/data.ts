@@ -1,4 +1,4 @@
-import type { Payment } from './components/data-table-columns';
+import type { Payment } from './components/data-grid-columns';
 
 export const data: Payment[] = [
     {

@@ -1,0 +1,405 @@
+import { router } from '@inertiajs/react';
+import { useTable } from '@tanstack/react-table';
+import type {
+    ColumnDef,
+    ColumnVisibilityState,
+    RowData,
+    SortingState,
+} from '@tanstack/react-table';
+import * as React from 'react';
+
+import { FacetedFilter } from '@/components/filters/faceted-filter';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+
+import { PAGE_SIZE, SEARCH_DEBOUNCE_MS } from './constants';
+import { DataGridEmpty } from './data-grid-empty';
+import { features } from './data-grid-features';
+import type { DataGridFeatures } from './data-grid-features';
+import { DataGridLoading } from './data-grid-loading';
+import { DataGridPaginationAdvance } from './data-grid-pagination-advance';
+import { DataGridPaginationSimple } from './data-grid-pagination-simple';
+import { DataGridSearchInput } from './data-grid-search-input';
+import { DataGridVisibilityToggle } from './data-grid-visibility-toggle';
+import type { DataGridFilters, Paginated, ToolbarConfig } from './types';
+
+/**
+ * Query defaults the controller already applies. Params matching a default are
+ * dropped from the URL so the address bar stays clean.
+ */
+export interface DataGridServerDefaults {
+    sort?: string;
+    direction?: 'asc' | 'desc';
+    perPage?: number;
+}
+
+export interface DataGridServerProps<TData extends RowData> {
+    columns: ColumnDef<DataGridFeatures, TData>[];
+    /** The paginator straight from the controller. */
+    paginated: Paginated<TData>;
+    /** The resolved filters the controller echoed back. */
+    filters: DataGridFilters;
+    /** Target URL, normally a Wayfinder route (e.g. `{resources}Index.url()`). */
+    url: string;
+    toolbar?: ToolbarConfig;
+    /** Extra buttons rendered to the right of the visibility toggle. */
+    actions?: React.ReactNode;
+    /** Hide the column visibility toggle. Default: true. */
+    showVisibilityToggle?: boolean;
+    /**
+     * Default for `DataGridHeaderDropdown`'s per-column `showVisibilityToggle`
+     * prop across every column that doesn't set its own. Default: true.
+     */
+    showHeaderVisibilityToggle?: boolean;
+    defaults?: DataGridServerDefaults;
+    /** Pagination style, or `none` to hide it (e.g. the query returns every row already). Default: `advance`. */
+    pagination?: 'advance' | 'simple' | 'none';
+    /** Shown when there are no rows and no search/facet is active. */
+    emptyTitle?: string;
+    emptyDescription?: string;
+    /** Shown when there are no rows while a search or facet is active. Falls back to `emptyTitle`/`emptyDescription` when omitted. */
+    emptyFilteredTitle?: string;
+    emptyFilteredDescription?: string;
+}
+
+type QueryValue = string | string[] | number | undefined;
+
+export function DataGridServer<TData extends RowData>({
+    columns,
+    paginated,
+    filters,
+    url,
+    toolbar,
+    actions,
+    showVisibilityToggle = true,
+    showHeaderVisibilityToggle = true,
+    defaults = {},
+    pagination = 'advance',
+    emptyTitle,
+    emptyDescription,
+    emptyFilteredTitle,
+    emptyFilteredDescription,
+}: DataGridServerProps<TData>) {
+    const facets = toolbar?.facets ?? [];
+    const searchConfigs = toolbar?.searches ?? [];
+
+    // True when a search box or facet is currently narrowing the result set —
+    // distinguishes "no rows in this filter" from "no rows at all" in the
+    // empty state.
+    const isFiltered =
+        searchConfigs.some((search) => !!filters[search.key]) ||
+        facets.some((facet) => {
+            const value = filters[facet.key];
+
+            return Array.isArray(value) ? value.length > 0 : !!value;
+        });
+
+    const {
+        sort: defaultSort,
+        direction: defaultDirection = 'desc',
+        perPage: defaultPerPage = PAGE_SIZE,
+    } = defaults;
+
+    const [columnVisibility, setColumnVisibility] =
+        React.useState<ColumnVisibilityState>({});
+    const [isPending, setIsPending] = React.useState(false);
+
+    // Search is debounced locally, so it needs its own state; everything else
+    // is derived from the props the controller sent back.
+    const [searches, setSearches] = React.useState<Record<string, string>>(() =>
+        Object.fromEntries(
+            searchConfigs.map((search) => [
+                search.key,
+                (filters[search.key] as string) ?? '',
+            ]),
+        ),
+    );
+
+    const searchTimeouts = React.useRef<
+        Record<string, ReturnType<typeof setTimeout>>
+    >({});
+
+    React.useEffect(() => {
+        const timeouts = searchTimeouts.current;
+
+        return () => {
+            Object.values(timeouts).forEach(clearTimeout);
+        };
+    }, []);
+
+    const sorting: SortingState = filters.sort
+        ? [{ id: filters.sort, desc: filters.direction !== 'asc' }]
+        : [];
+
+    const perPage = Number(filters.per_page ?? defaultPerPage);
+
+    const visit = React.useCallback(
+        (overrides: Record<string, QueryValue>) => {
+            const current: Record<string, QueryValue> = {
+                ...filters,
+                page: paginated.current_page,
+                ...overrides,
+            };
+
+            const query: Record<string, QueryValue> = {};
+
+            Object.entries(current).forEach(([key, value]) => {
+                if (value === undefined || value === '') {
+                    return;
+                }
+
+                if (Array.isArray(value) && value.length === 0) {
+                    return;
+                }
+
+                if (key === 'page' && Number(value) === 1) {
+                    return;
+                }
+
+                if (key === 'sort' && value === defaultSort) {
+                    return;
+                }
+
+                if (key === 'direction' && value === defaultDirection) {
+                    return;
+                }
+
+                if (key === 'per_page' && Number(value) === defaultPerPage) {
+                    return;
+                }
+
+                query[key] = value;
+            });
+
+            router.get(url, query, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+                onStart: () => setIsPending(true),
+                onFinish: () => setIsPending(false),
+            });
+        },
+        [
+            filters,
+            paginated.current_page,
+            url,
+            defaultSort,
+            defaultDirection,
+            defaultPerPage,
+        ],
+    );
+
+    const table = useTable({
+        features,
+        data: paginated.data,
+        columns,
+        meta: { showHeaderVisibilityToggle },
+        manualPagination: true,
+        manualSorting: true,
+        manualFiltering: true,
+        rowCount: paginated.total,
+        enableSortingRemoval: false,
+        onSortingChange: (updater) => {
+            const next =
+                typeof updater === 'function' ? updater(sorting) : updater;
+            const sort = next[0];
+
+            visit({
+                sort: sort?.id,
+                direction: sort ? (sort.desc ? 'desc' : 'asc') : undefined,
+                page: 1,
+            });
+        },
+        onColumnVisibilityChange: setColumnVisibility,
+        state: {
+            sorting,
+            columnVisibility,
+            pagination: {
+                pageIndex: paginated.current_page - 1,
+                pageSize: perPage,
+            },
+        },
+    });
+
+    const handleSearch = (key: string, value: string) => {
+        setSearches((current) => ({ ...current, [key]: value }));
+
+        if (searchTimeouts.current[key]) {
+            clearTimeout(searchTimeouts.current[key]);
+        }
+
+        searchTimeouts.current[key] = setTimeout(() => {
+            visit({ [key]: value, page: 1 });
+        }, SEARCH_DEBOUNCE_MS);
+    };
+
+    return (
+        <div className="flex flex-col gap-3">
+            {toolbar && (
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-1 flex-wrap items-center gap-2">
+                        {searchConfigs.map((search) => (
+                            <DataGridSearchInput
+                                key={search.key}
+                                placeholder={search.placeholder}
+                                value={searches[search.key] ?? ''}
+                                onChange={(value) =>
+                                    handleSearch(search.key, value)
+                                }
+                            />
+                        ))}
+                        {facets.map((facet) => {
+                            const applied = filters[facet.key];
+
+                            return (
+                                <FacetedFilter
+                                    key={facet.key}
+                                    title={facet.title}
+                                    options={facet.options}
+                                    variant={facet.variant}
+                                    appliedValues={
+                                        Array.isArray(applied)
+                                            ? applied
+                                            : applied
+                                              ? [applied]
+                                              : []
+                                    }
+                                    onApply={(values) =>
+                                        visit({ [facet.key]: values, page: 1 })
+                                    }
+                                    onClear={() =>
+                                        visit({
+                                            [facet.key]: undefined,
+                                            page: 1,
+                                        })
+                                    }
+                                />
+                            );
+                        })}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                        {showVisibilityToggle && (
+                            <DataGridVisibilityToggle
+                                table={table}
+                                columnVisibility={columnVisibility}
+                            />
+                        )}
+                        {actions}
+                    </div>
+                </div>
+            )}
+
+            <div className="overflow-hidden rounded-md border">
+                <Table>
+                    <TableHeader className="bg-muted">
+                        {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id}>
+                                {headerGroup.headers.map((header) => (
+                                    <TableHead key={header.id}>
+                                        {header.isPlaceholder ? null : (
+                                            <table.FlexRender header={header} />
+                                        )}
+                                    </TableHead>
+                                ))}
+                            </TableRow>
+                        ))}
+                    </TableHeader>
+                    <TableBody>
+                        {isPending ? (
+                            <TableRow className="hover:bg-transparent">
+                                <TableCell
+                                    colSpan={
+                                        table.getVisibleLeafColumns().length
+                                    }
+                                    className="p-0"
+                                >
+                                    <DataGridLoading />
+                                </TableCell>
+                            </TableRow>
+                        ) : table.getRowModel().rows?.length ? (
+                            table.getRowModel().rows.map((row) => (
+                                <TableRow key={row.id}>
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell key={cell.id}>
+                                            <table.FlexRender cell={cell} />
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow className="hover:bg-transparent">
+                                <TableCell
+                                    colSpan={
+                                        table.getVisibleLeafColumns().length
+                                    }
+                                    className="p-0"
+                                >
+                                    <DataGridEmpty
+                                        title={
+                                            isFiltered
+                                                ? (emptyFilteredTitle ??
+                                                  emptyTitle)
+                                                : emptyTitle
+                                        }
+                                        description={
+                                            isFiltered
+                                                ? (emptyFilteredDescription ??
+                                                  emptyDescription)
+                                                : emptyDescription
+                                        }
+                                    />
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+
+            {pagination === 'advance' && (
+                <DataGridPaginationAdvance
+                    server={{
+                        total: paginated.total,
+                        from: paginated.from,
+                        to: paginated.to,
+                        currentPage: paginated.current_page,
+                        lastPage: paginated.last_page,
+                        perPage: paginated.per_page,
+                        canPrev: paginated.current_page > 1,
+                        canNext: paginated.current_page < paginated.last_page,
+                        onFirst: () => visit({ page: 1 }),
+                        onPrev: () =>
+                            visit({ page: paginated.current_page - 1 }),
+                        onNext: () =>
+                            visit({ page: paginated.current_page + 1 }),
+                        onLast: () => visit({ page: paginated.last_page }),
+                        onPageSizeChange: (size) =>
+                            visit({ per_page: size, page: 1 }),
+                    }}
+                />
+            )}
+            {pagination === 'simple' && (
+                <DataGridPaginationSimple
+                    server={{
+                        total: paginated.total,
+                        from: paginated.from,
+                        to: paginated.to,
+                        currentPage: paginated.current_page,
+                        lastPage: paginated.last_page,
+                        canPrev: paginated.current_page > 1,
+                        canNext: paginated.current_page < paginated.last_page,
+                        onPrev: () =>
+                            visit({ page: paginated.current_page - 1 }),
+                        onNext: () =>
+                            visit({ page: paginated.current_page + 1 }),
+                    }}
+                />
+            )}
+        </div>
+    );
+}

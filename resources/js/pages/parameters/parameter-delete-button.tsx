@@ -1,4 +1,5 @@
 import { Form } from '@inertiajs/react';
+import { Trash2 } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import ParameterController from '@/actions/App/Http/Controllers/ParameterController';
 import {
@@ -13,9 +14,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 type Props = {
-    parameter: {
+    record: {
         id: number;
         code: string;
     };
@@ -24,30 +30,37 @@ type Props = {
 };
 
 export default function ParameterDeleteButton({
-    parameter,
-    variant = 'ghost',
-    size = 'sm',
+    record,
+    variant = 'destructive',
+    size = 'icon-sm',
 }: Props) {
     return (
         <AlertDialog>
-            <AlertDialogTrigger asChild>
-                <Button variant={variant} size={size}>
-                    Delete
-                </Button>
-            </AlertDialogTrigger>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <AlertDialogTrigger asChild>
+                        <Button
+                            variant={variant}
+                            size={size}
+                            aria-label="Delete"
+                        >
+                            <Trash2 />
+                        </Button>
+                    </AlertDialogTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Delete</TooltipContent>
+            </Tooltip>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>
-                        Delete {parameter.code}?
-                    </AlertDialogTitle>
+                    <AlertDialogTitle>Delete {record.code}?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This will remove the parameter from active use. This
-                        action cannot be undone.
+                        This will permanently remove this parameter. This action
+                        cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <Form {...ParameterController.destroy.form(parameter.id)}>
+                    <Form {...ParameterController.destroy.form(record.id)}>
                         {({ processing }) => (
                             <Button
                                 type="submit"
@@ -57,7 +70,7 @@ export default function ParameterDeleteButton({
                                 {processing && (
                                     <Spinner data-icon="inline-start" />
                                 )}
-                                Delete parameter
+                                Delete record
                             </Button>
                         )}
                     </Form>

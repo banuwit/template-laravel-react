@@ -9,103 +9,64 @@ test('guests are redirected to the login page', function () {
         ->assertRedirect(route('login'));
 });
 
-test('authenticated users can visit the parameter list', function () {
+test('authenticated users can visit the parameters list', function () {
     $user = User::factory()->create();
-
-    $first = Parameter::factory()->create([
-        'created_at' => now()->subMinute(),
-    ]);
-    $second = Parameter::factory()->create([
-        'created_at' => now(),
-    ]);
+    $first = Parameter::factory()->create(['sort_order' => 1, 'code' => 'a_code']);
+    $second = Parameter::factory()->create(['sort_order' => 2, 'code' => 'b_code']);
 
     $this->actingAs($user)
         ->get(route('parameters.index'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('parameters/index')
-            ->has('parameters.data', 2)
-            ->where('parameters.data.0.id', $second->id)
-            ->where('parameters.data.1.id', $first->id)
-            ->where('filters.sort', 'created_at')
-            ->where('filters.direction', 'desc'),
+            ->has('parameters', 2)
+            ->where('parameters.0.id', $first->id)
+            ->where('parameters.0.can_delete', true)
+            ->where('parameters.1.id', $second->id),
         );
 });
 
-test('parameters can be searched by group, code, or value', function () {
+test('the full parameter list is sent without pagination', function () {
     $user = User::factory()->create();
-
-    Parameter::factory()->create([
-        'group' => 'status',
-        'code' => 'status_active',
-        'value' => 'Enabled',
-    ]);
-
-    Parameter::factory()->create([
-        'group' => 'status',
-        'code' => 'status_inactive',
-        'value' => 'Disabled',
-    ]);
-
-    Parameter::factory()->create([
-        'group' => 'gender',
-        'code' => 'gender_male',
-        'value' => 'Male',
-    ]);
-
-    $this->actingAs($user)
-        ->get(route('parameters.index', ['search' => 'Enabled']))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('parameters/index')
-            ->has('parameters.data', 1)
-            ->where('parameters.data.0.code', 'status_active')
-            ->where('filters.search', 'Enabled'),
-        );
-});
-
-test('parameters can be sorted by code', function () {
-    $user = User::factory()->create();
-
-    Parameter::factory()->create(['code' => 'charlie']);
-    Parameter::factory()->create(['code' => 'alice']);
-    Parameter::factory()->create(['code' => 'bob']);
-
-    $this->actingAs($user)
-        ->get(route('parameters.index', ['sort' => 'code', 'direction' => 'asc']))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('parameters/index')
-            ->where('parameters.data.0.code', 'alice')
-            ->where('parameters.data.1.code', 'bob')
-            ->where('parameters.data.2.code', 'charlie')
-            ->where('filters.sort', 'code')
-            ->where('filters.direction', 'asc'),
-        );
-});
-
-test('the parameter list is paginated', function () {
-    $user = User::factory()->create();
-    Parameter::factory()->count(11)->create();
+    Parameter::factory()->count(15)->create();
 
     $this->actingAs($user)
         ->get(route('parameters.index'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('parameters/index')
-            ->has('parameters.data', 10)
-            ->where('parameters.total', 11)
-            ->where('parameters.last_page', 2)
-            ->where('parameters.current_page', 1),
+            ->has('parameters', 15),
         );
 });
 
-test('invalid sort columns are rejected', function () {
+test('parameters are ordered by sort order then code', function () {
     $user = User::factory()->create();
+    Parameter::factory()->create(['sort_order' => 1, 'code' => 'b_code']);
+    Parameter::factory()->create(['sort_order' => 1, 'code' => 'a_code']);
+    Parameter::factory()->create(['sort_order' => 0, 'code' => 'c_code']);
 
     $this->actingAs($user)
-        ->from(route('parameters.index'))
-        ->get(route('parameters.index', ['sort' => 'description']))
-        ->assertRedirect(route('parameters.index'))
-        ->assertSessionHasErrors('sort');
+        ->get(route('parameters.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('parameters/index')
+            ->where('parameters.0.code', 'c_code')
+            ->where('parameters.1.code', 'a_code')
+            ->where('parameters.2.code', 'b_code'),
+        );
+});
+
+test('system parameters cannot be deleted from the list', function () {
+    $user = User::factory()->create();
+    $parameter = Parameter::factory()->system()->create();
+
+    $this->actingAs($user)
+        ->get(route('parameters.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('parameters/index')
+            ->where('parameters.0.can_delete', false),
+        );
+
+    expect($parameter->is_system)->toBeTrue();
 });

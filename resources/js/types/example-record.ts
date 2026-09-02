@@ -57,9 +57,15 @@ export const STATUS_OPTIONS: {
 ];
 
 export function genderLabel(gender: ExampleRecord['gender']): string {
-    return GENDER_OPTIONS.find((option) => option.value === gender)?.label ?? gender;
+    return (
+        GENDER_OPTIONS.find((option) => option.value === gender)?.label ??
+        gender
+    );
 }
 
 export function statusLabel(status: ExampleRecord['status']): string {
-    return STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status;
+    return (
+        STATUS_OPTIONS.find((option) => option.value === status)?.label ??
+        status
+    );
 }

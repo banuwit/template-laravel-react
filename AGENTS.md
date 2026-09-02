@@ -10,6 +10,7 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 This application is a Laravel application running on PHP 8.5. You are an expert with the Laravel ecosystem. Always use the APIs that match the installed major version of each package — do not assume a version.
 
 Before relying on a package's API, confirm its installed version:
+
 - PHP packages: run `composer show --direct` to list direct dependencies with versions, or `composer show <vendor/package>` for a single package.
 - JS packages: check `package.json` for the installed versions.
 
@@ -85,7 +86,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - Execute PHP in app context for debugging and testing code. Do not create models without user approval, prefer tests with factories instead. Prefer existing Artisan commands over custom tinker code.
 - Always use single quotes to prevent shell expansion: `php artisan tinker --execute 'Your::code();'`
-  - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
+    - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
 
 === php rules ===
 
@@ -207,14 +208,17 @@ Starter kit Laravel 13 + Inertia.js v3 + React 19 (PHP 8.5, TypeScript). Fortify
 ## Perintah
 
 ### Dev server
+
 - `composer run dev` — menjalankan `php artisan dev` (app, queue listener, dan Vite dev server sekaligus)
 - `npm run dev` — Vite dev server saja
 
 ### Build
+
 - `npm run build` — build frontend production
 - `npm run build:ssr` — build termasuk bundle SSR
 
 ### Lint / format / types
+
 - `composer run lint` — Pint (PHP), semua file
 - `vendor/bin/pint --dirty --format agent` — Pint hanya file yang berubah; jalankan ini setiap selesai mengubah file PHP, sebelum selesai
 - `npm run lint` — ESLint, auto-fix
@@ -224,6 +228,7 @@ Starter kit Laravel 13 + Inertia.js v3 + React 19 (PHP 8.5, TypeScript). Fortify
 - `composer run ci:check` — gate CI lengkap: lint/format/type-check JS + `composer run test`
 
 ### Tes
+
 - `php artisan test --compact` — jalankan semua tes Pest
 - `php artisan test --compact --filter=testName` — jalankan satu tes/pattern
 - `php artisan test --compact tests/Feature/UserCrudTest.php` — jalankan satu file
@@ -232,11 +237,13 @@ Starter kit Laravel 13 + Inertia.js v3 + React 19 (PHP 8.5, TypeScript). Fortify
 - Tes memakai Pest, `RefreshDatabase` bila perlu, DB SQLite in-memory, dan `assertInertia`/`AssertableInertia` dari Inertia.
 
 ### Wayfinder
+
 - Setelah menambah/mengubah route: `php artisan wayfinder:generate --with-form --no-interaction` untuk regenerate `resources/js/actions/` dan `resources/js/routes/`.
 
 ## Arsitektur
 
 ### Struktur backend
+
 - `app/Http/Controllers` — controller resource yang tipis (tidak ada layer service class untuk listing CRUD; controller langsung memegang logic `index`/`store`/`update`/`destroy`).
 - `app/Http/Requests/{Resource}s/` — satu Form Request per aksi (`Index`, `Store`, `Update`), masing-masing punya `authorize()` yang memanggil policy dan helper accessor bertipe (mis. `search()`, `sort()`, `direction()`) alih-alih membaca `$request->query()` mentah di controller.
 - `app/Policies` — satu policy per model; `viewAny` saat ini mengizinkan semua user yang sudah login (pembatasan berbasis role adalah langkah masa depan, belum diimplementasikan).
@@ -247,29 +254,30 @@ Starter kit Laravel 13 + Inertia.js v3 + React 19 (PHP 8.5, TypeScript). Fortify
 - Routes: `routes/web.php` (resource aplikasi, di dalam middleware group `auth`+`verified`) dan `routes/settings.php` (profile/security/appearance, kebutuhan middleware berbeda per aksi). Belum ada route API.
 
 ### Struktur frontend (`resources/js/`)
-- `pages/` — komponen halaman Inertia, satu direktori per resource (`users`, `example1`, `example2`, `example3`, `example4`, `parameters`, `settings`, `auth`). Halaman selain `auth`/`settings` otomatis dapat app layout; set `Component.layout = { breadcrumbs: [...] }` di tiap halaman.
+
+- `pages/` — komponen halaman Inertia, satu direktori per resource (`users`, `example1`, `example2`, `example3`, `example4`, `settings`, `auth`). Halaman selain `auth`/`settings` otomatis dapat app layout; set `Component.layout = { breadcrumbs: [...] }` di tiap halaman.
 - `actions/` dan `routes/` — hasil generate Wayfinder; import fungsi route/controller dari sini alih-alih hardcode URL (`@/routes/{resource}`, `@/actions/...`). Jangan pernah menulis path string manual seperti `'/users'`.
 - `components/ui/` — primitive shadcn; perlakukan sebagai shared, jangan ubah `sheet.tsx` dll. tanpa permintaan eksplisit.
 - `components/content-side-panel.tsx` — primitive panel inline non-modal custom yang dipakai pola CRUD "panel inline" (berbeda dari Radix `Sheet`).
 - `components/layouts/app`, `components/layouts/auth`, `components/layouts/settings` — shell layout.
+- `components/data-grid/`, `components/data-table/`, `components/filters/` — dua paket tabel reusable (`DataGridClient`/`DataGridServer` berbasis TanStack Table v9, `DataTableClient`/`DataTableServer` berbasis primitive shadcn `Table` murni) plus komponen filter lepas dari tabel (`FacetedFilter`, `SelectBox`). Baca `.agents/rules/table-pattern.md` dan `.agents/rules/filter-pattern.md` sebelum menyentuh salah satunya — **jangan** bikin ulang popover filter atau komponen pagination/sort-header baru.
 - `types/pagination.ts` — tipe `Paginated<T>` yang dipakai bersama; pakai ulang untuk resource paginated apa pun, jangan duplikasi bentuknya.
 
-### Pola halaman list/CRUD (penting — baca sebelum menyentuh CRUD resource mana pun)
+### `.agents/rules/` (penting — baca sebelum menyentuh CRUD, tabel, atau filter mana pun)
 
-Proyek ini punya pola baku untuk halaman list + CRUD Inertia, didefinisikan di `.agents/rules/crud-pages.md`. Poin penting:
+Beda dengan `.ai/rules` yang disebut di blok Boost guidelines di atas (direktori itu **tidak ada** di proyek ini — jangan cari `index.md` di sana), rules proyek ini ada di `.agents/rules/`. Tidak ada file index; tiap rule file menyatakan sendiri path-nya lewat frontmatter `globs:`. **Sebelum membuat/mengedit file yang cocok dengan salah satu glob di bawah, baca rule file itu dulu sampai selesai** — isinya keputusan yang sudah diambil dan trap yang sudah ditemukan, bukan sekadar saran.
 
-- Halaman list dibangun manual (controller + Inertia + shadcn `Table`) — jangan pernah pakai Filament, generator CRUD, atau TanStack Table.
-- Ada **empat** varian UI create/edit/view — jangan asumsikan mana yang dipakai. Template kode lengkap tiap varian ada di `.agents/rules/crud-pages.md` (mandiri, tidak bergantung halaman contoh):
-  - **Halaman baru** — `create.tsx`/`edit.tsx`/`show.tsx`, `Route::resource` lengkap.
- - **Dialog** — shadcn `Dialog`, `only(['index','store','update','destroy'])`.
- - **Sheet** — Radix `Sheet` (`@/components/ui/sheet`), overlay modal dari kanan, route sama yang dibatasi.
- - **Panel inline** — `@/components/content-side-panel` (non-modal, di dalam area konten app layout, list menyusut jadi 2 kolom), route sama yang dibatasi.
-- **Sebelum scaffold create/edit/show untuk resource baru, tanya user mau pakai varian yang mana** — jangan asumsikan, kecuali user sudah menyatakan pilihannya di permintaan yang sama.
-- Delete selalu `AlertDialog` di list, apa pun varian yang dipilih.
-- Mode view (read-only) tidak pernah punya tombol Edit atau Close di footer — edit hanya dipicu dari kolom aksi list. `show.tsx` (halaman baru) punya tombol "Back to {resource}" sebagai gantinya.
-- Konvensi sort/search/pagination (berlaku di keempat varian): whitelist `sort` via `in:`, debounce search 300ms di client, pakai `router.get(...)` dengan `preserveState`/`preserveScroll`/`replace: true`, hilangkan query param default dari URL, pakai Inertia `Link` (bukan `<a>` mentah atau `PaginationLink` shadcn) untuk pagination.
-- Lihat `.agents/rules/crud-pages.md` untuk urutan scaffold lengkap (perintah artisan, konvensi policy/request, pendaftaran nav di `app-sidebar.tsx` dan `app-header.tsx`, dan matriks tes minimum per varian).
+| File                     | Kapan dibaca                                                                         | Poin penting                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `crud-pattern.md`        | Menambah/mengubah halaman list + CRUD Inertia mana pun                               | Spesifikasi mandiri lengkap: migration → model → policy → request → controller → route → halaman React → test. Ada **empat** varian UI create/edit/view (Halaman baru, Dialog, Sheet, Panel inline) — **tanya user dulu** mana yang dipakai, jangan asumsikan kecuali sudah dinyatakan di permintaan yang sama. Delete selalu `AlertDialog` apa pun variannya. Mode view (read-only) tidak pernah punya tombol Edit/Close di footer. |
+| `table-pattern.md`       | Membangun/mengubah tampilan tabel/list apa pun                                       | Ada **dua** paket tabel yang sengaja hidup berdampingan — `data-grid` (TanStack Table v9) dan `data-table` (shadcn `Table` murni, tanpa TanStack). **Tanya user dulu** empat hal sekaligus: paket mana, header seperti apa (label/sort/dropdown), pagination seperti apa (advance/simple/tanpa — bisa show/hidden independen dari toolbar), dan filter apa. Jangan pasang TanStack langsung di halaman di luar `data-grid`.          |
+| `filter-pattern.md`      | Butuh kontrol pilihan (filter toolbar tabel, select di form, filter di card/halaman) | Ada **dua** komponen filter — `FacetedFilter` (ada tombol Apply/Reset, cocok untuk filter server-side) dan `SelectBox` (langsung berlaku saat diklik, bisa jadi form control lewat prop `name`). **Tanya user dulu** yang mana. Jangan bikin popover multi-select atau combobox baru — pakai salah satu dari dua ini.                                                                                                                |
+| `new-page-guidelines.md` | Scaffold resource baru dari nol                                                      | Checklist urutan kerja + trap yang sudah ditemukan (FK ke `users` itu bigint bukan UUID, audit columns via `Model::booted()`, `fresh()` pada model `SoftDeletes`, search scope vs SQLite `LIKE` + underscore, boolean field di form native Inertia). Tidak menduplikasi isi `crud-pattern.md`, hanya melengkapi.                                                                                                                     |
 
-### Konfigurasi agents/skills
-- `.agents/skills/` dan `boost.json` mendefinisikan skill kurasi Laravel Boost (Fortify, Laravel best practices, Wayfinder, Pest, Inertia+React, Tailwind) — aktif otomatis untuk pekerjaan yang cocok; utamakan panduan ini dibanding konvensi ad hoc.
-- Skill di `.claude/skills/*` adalah symlink ke `.agents/skills/*` — sama seperti `CLAUDE.md` yang merupakan symlink ke file `AGENTS.md` ini.
+Konvensi sort/search/pagination yang berlaku lintas keempat rule di atas: whitelist `sort` via `in:`, debounce search 300ms di client, pakai `router.get(...)` dengan `preserveState`/`preserveScroll`/`replace: true`, hilangkan query param default dari URL, pakai Inertia `Link` (bukan `<a>` mentah atau `PaginationLink` shadcn) untuk pagination manual.
+
+### Skill (`.agents/skills/`)
+
+- `.agents/skills/` berisi 11 skill. **7 di antaranya** terdaftar di `boost.json` (`skills:` array) sebagai skill kurasi Laravel Boost yang disinkron otomatis (`infer-conventions`, `fortify-development`, `laravel-best-practices`, `wayfinder-development`, `pest-testing`, `inertia-react-development`, `tailwindcss-development`) — jangan edit isinya secara manual, akan tertimpa saat `artisan boost:update` jalan. **4 sisanya** (`frontend-design`, `grill-me`, `shadcn`, `ui-ux-pro-max`) ditambahkan terpisah, bukan dikelola Boost.
+- Aktifkan skill yang relevan begitu domain pekerjaannya cocok — jangan tunggu sampai stuck (lihat "Skills Activation" di blok Boost guidelines di atas).
+- `.claude/skills/*` adalah symlink ke `.agents/skills/*` — sama seperti `CLAUDE.md` yang merupakan symlink ke file `AGENTS.md` ini. Edit lewat `.agents/skills/`, bukan lewat symlink-nya.

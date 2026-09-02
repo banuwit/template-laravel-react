@@ -1,9 +1,9 @@
 import Example3Controller from '@/actions/App/Http/Controllers/Example3Controller';
-import ExampleRecordForm from '@/components/example-record-form';
 import {
     ExampleRecordDetailRows,
     exampleRecordFormValues,
 } from '@/components/example-record-detail';
+import ExampleRecordForm from '@/components/example-record-form';
 import {
     Sheet,
     SheetContent,

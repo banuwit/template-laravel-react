@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Users;
 
-use App\Concerns\ProfileValidationRules;
+use App\Concerns\ExampleRecordValidationRules;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -10,7 +10,7 @@ use Illuminate\Validation\Rules\Password;
 
 class UpdateUserRequest extends FormRequest
 {
-    use ProfileValidationRules;
+    use ExampleRecordValidationRules;
 
     /**
      * Determine if the user is authorized to make this request.
@@ -33,7 +33,7 @@ class UpdateUserRequest extends FormRequest
         $userId = $user instanceof User ? $user->id : null;
 
         return [
-            ...$this->profileRules($userId),
+            ...$this->exampleRecordRules(User::class, $userId),
             'password' => ['nullable', 'string', Password::default(), 'confirmed'],
         ];
     }
@@ -43,7 +43,16 @@ class UpdateUserRequest extends FormRequest
      */
     public function userAttributes(): array
     {
-        $attributes = $this->safe()->only(['name', 'email']);
+        $attributes = $this->safe()->only([
+            'name',
+            'email',
+            'phone',
+            'department',
+            'position',
+            'join_date',
+            'gender',
+            'status',
+        ]);
         $password = $this->validated('password');
 
         if (is_string($password) && $password !== '') {

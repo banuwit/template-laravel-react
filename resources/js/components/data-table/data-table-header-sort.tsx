@@ -1,79 +1,80 @@
-import { Subscribe } from '@tanstack/react-table';
-import type { Column, RowData } from '@tanstack/react-table';
-import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import type * as React from 'react';
 
-import { Button } from '@/components/ui/button';
+import { TableHead } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
-import type { DataTableFeatures } from './data-table-features';
+export type SortDirection = 'asc' | 'desc';
 
-interface DataTableColumnHeaderProps<
-    TData extends RowData,
-    TValue,
-> extends React.HTMLAttributes<HTMLDivElement> {
-    column: Column<DataTableFeatures, TData, TValue>;
-    title: string;
+export interface DataTableHeaderSortProps {
+    /** The column this head sorts by. */
+    columnKey: string;
+    /** The column currently sorted, if any. */
+    sort?: string;
+    direction?: SortDirection;
+    onSort: (columnKey: string, direction: SortDirection) => void;
+    align?: 'left' | 'center' | 'right';
+    className?: string;
+    children: React.ReactNode;
 }
 
-function sortDirection(
-    sorting: Array<{ id: string; desc: boolean }>,
-    columnId: string,
-): false | 'asc' | 'desc' {
-    const sort = sorting.find((item) => item.id === columnId);
+const alignClass = {
+    left: 'justify-start',
+    center: 'justify-center',
+    right: 'justify-end',
+} as const;
 
-    if (!sort) {
-        return false;
-    }
-
-    return sort.desc ? 'desc' : 'asc';
-}
-
-export function DataTableColumnHeader<TData extends RowData, TValue>({
-    column,
-    title,
+/**
+ * A sortable `<TableHead>`. Clicking flips the direction on the active column
+ * and starts ascending on any other, matching the manual list pages.
+ *
+ * Exported on its own so a hand-written table can reuse the same header without
+ * adopting `DataTableClient` / `DataTableServer`.
+ */
+export function DataTableHeaderSort({
+    columnKey,
+    sort,
+    direction = 'desc',
+    onSort,
+    align = 'left',
     className,
-}: DataTableColumnHeaderProps<TData, TValue>) {
-    if (!column.getCanSort()) {
-        return <div className={cn(className)}>{title}</div>;
-    }
+    children,
+}: DataTableHeaderSortProps) {
+    const isActive = sort === columnKey;
 
     return (
-        <Subscribe
-            source={column.table.store}
-            selector={(state) => sortDirection(state.sorting, column.id)}
+        <TableHead
+            className={cn(align === 'right' && 'text-right', className)}
+            aria-sort={
+                isActive
+                    ? direction === 'asc'
+                        ? 'ascending'
+                        : 'descending'
+                    : 'none'
+            }
         >
-            {(sorted) => (
-                <div className={cn('flex items-center gap-2', className)}>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-sort={
-                            sorted === 'desc'
-                                ? 'descending'
-                                : sorted === 'asc'
-                                  ? 'ascending'
-                                  : undefined
-                        }
-                        className={cn(
-                            '-ml-3 h-8',
-                            sorted && 'font-bold text-primary',
-                        )}
-                        onClick={column.getToggleSortingHandler()}
-                    >
-                        <span>{title}</span>
-                        {sorted === 'desc' ? (
-                            <ArrowDown data-icon="inline-end" />
-                        ) : sorted === 'asc' ? (
-                            <ArrowUp data-icon="inline-end" />
-                        ) : (
-                            <ChevronsUpDown
-                                data-icon="inline-end"
-                                className="text-muted-foreground"
-                            />
-                        )}
-                    </Button>
-                </div>
-            )}
-        </Subscribe>
+            <button
+                type="button"
+                className={cn(
+                    'inline-flex w-full items-center gap-1.5 rounded-sm font-medium hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none',
+                    alignClass[align],
+                )}
+                onClick={() =>
+                    onSort(
+                        columnKey,
+                        isActive && direction === 'asc' ? 'desc' : 'asc',
+                    )
+                }
+            >
+                {children}
+                {!isActive ? (
+                    <ArrowUpDown className="size-3.5 text-muted-foreground" />
+                ) : direction === 'asc' ? (
+                    <ArrowUp className="size-3.5" />
+                ) : (
+                    <ArrowDown className="size-3.5" />
+                )}
+            </button>
+        </TableHead>
     );
 }

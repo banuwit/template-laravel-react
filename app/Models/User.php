@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\Gender;
+use App\Enums\Status;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -17,6 +19,12 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property string|null $phone
+ * @property string|null $department
+ * @property string|null $position
+ * @property Carbon|null $join_date
+ * @property Gender|null $gender
+ * @property Status $status
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $two_factor_secret
@@ -26,12 +34,29 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable([
+    'name',
+    'email',
+    'password',
+    'phone',
+    'department',
+    'position',
+    'join_date',
+    'gender',
+    'status',
+])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'status' => 'active',
+    ];
 
     /**
      * Get the attributes that should be cast.
@@ -43,6 +68,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'join_date' => 'date',
+            'gender' => Gender::class,
+            'status' => Status::class,
         ];
     }
 
@@ -59,6 +87,6 @@ class User extends Authenticatable
 
         $like = '%'.addcslashes($term, '%_\\').'%';
 
-        return $query->whereAny(['name', 'email'], 'like', $like);
+        return $query->where('name', 'like', $like);
     }
 }

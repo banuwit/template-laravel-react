@@ -57,3 +57,11 @@ function validExampleRecordPayload(array $overrides = []): array
         'status' => 'active',
     ], $overrides);
 }
+
+function validUserPayload(array $overrides = []): array
+{
+    return array_merge(validExampleRecordPayload(), [
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ], $overrides);
+}

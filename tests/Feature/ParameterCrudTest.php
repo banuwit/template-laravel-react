@@ -2,174 +2,131 @@
 
 use App\Models\Parameter;
 use App\Models\User;
-use Inertia\Testing\AssertableInertia as Assert;
+use Illuminate\Support\Facades\Route;
 
-test('guests cannot open the add new parameter page', function () {
-    $this->get(route('parameters.create'))
-        ->assertRedirect(route('login'));
+test('create, show, and edit parameters pages are not registered', function () {
+    expect(Route::has('parameters.create'))->toBeFalse()
+        ->and(Route::has('parameters.show'))->toBeFalse()
+        ->and(Route::has('parameters.edit'))->toBeFalse();
 });
 
-test('authenticated users can open the add new parameter page', function () {
+test('guests cannot create parameters', function () {
+    $this->post(route('parameters.store'), [
+        'group' => 'status',
+        'code' => 'status_active',
+        'value' => 'Active',
+    ])->assertRedirect(route('login'));
+});
+
+test('authenticated users can create a parameter', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user)
-        ->get(route('parameters.create'))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('parameters/create'),
-        );
-});
-
-test('a parameter can be created and records the creating actor', function () {
-    $actor = User::factory()->create();
-
-    $this->actingAs($actor)
         ->post(route('parameters.store'), [
             'group' => 'status',
             'code' => 'status_active',
             'value' => 'Active',
-            'description' => 'Active status',
-            'text_color' => '#111827',
-            'bg_color' => '#E5E7EB',
-            'is_active' => '1',
-            'is_system' => '0',
+            'description' => 'Record is available for use.',
+            'text_color' => '#166534',
+            'bg_color' => '#dcfce7',
             'sort_order' => 1,
+            'is_active' => '1',
         ])
-        ->assertSessionHasNoErrors()
         ->assertRedirect(route('parameters.index'));
 
-    $created = Parameter::query()->where('code', 'status_active')->first();
+    $parameter = Parameter::query()->where('code', 'status_active')->firstOrFail();
 
-    expect($created)->not->toBeNull()
-        ->and($created?->value)->toBe('Active')
-        ->and($created?->is_active)->toBeTrue()
-        ->and($created?->is_system)->toBeFalse()
-        ->and($created?->created_by)->toBe($actor->id)
-        ->and($created?->updated_by)->toBe($actor->id);
+    expect($parameter->group)->toBe('status')
+        ->and($parameter->value)->toBe('Active')
+        ->and($parameter->is_active)->toBeTrue()
+        ->and($parameter->is_system)->toBeFalse()
+        ->and($parameter->created_by)->toBe($user->id)
+        ->and($parameter->updated_by)->toBe($user->id);
 });
 
-test('creating a parameter requires a unique code', function () {
-    $actor = User::factory()->create();
+test('creating a parameter fails when the code is already taken', function () {
+    $user = User::factory()->create();
     Parameter::factory()->create(['code' => 'status_active']);
 
-    $this->actingAs($actor)
-        ->from(route('parameters.create'))
+    $this->actingAs($user)
         ->post(route('parameters.store'), [
             'group' => 'status',
             'code' => 'status_active',
-            'value' => 'Duplicate',
+            'value' => 'Active',
+            'sort_order' => 1,
             'is_active' => '1',
-            'is_system' => '0',
-            'sort_order' => 0,
         ])
-        ->assertSessionHasErrors('code')
-        ->assertRedirect(route('parameters.create'));
+        ->assertSessionHasErrors('code');
 });
 
-test('guests cannot open the parameter detail page', function () {
+test('creating a parameter fails when the color format is invalid', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('parameters.store'), [
+            'group' => 'status',
+            'code' => 'status_active',
+            'value' => 'Active',
+            'text_color' => 'not-a-color',
+            'sort_order' => 1,
+            'is_active' => '1',
+        ])
+        ->assertSessionHasErrors('text_color');
+});
+
+test('authenticated users can update a parameter', function () {
+    $user = User::factory()->create();
+    $parameter = Parameter::factory()->create(['value' => 'Old value']);
+
+    $this->actingAs($user)
+        ->put(route('parameters.update', $parameter), [
+            'group' => $parameter->group,
+            'code' => $parameter->code,
+            'value' => 'New value',
+            'sort_order' => $parameter->sort_order,
+            'is_active' => '1',
+        ])
+        ->assertRedirect(route('parameters.index'));
+
+    expect($parameter->fresh()->value)->toBe('New value')
+        ->and($parameter->fresh()->updated_by)->toBe($user->id);
+});
+
+test('updating a parameter ignores its own code for the unique rule', function () {
+    $user = User::factory()->create();
+    $parameter = Parameter::factory()->create(['code' => 'status_active']);
+
+    $this->actingAs($user)
+        ->put(route('parameters.update', $parameter), [
+            'group' => $parameter->group,
+            'code' => 'status_active',
+            'value' => $parameter->value,
+            'sort_order' => $parameter->sort_order,
+            'is_active' => '1',
+        ])
+        ->assertSessionHasNoErrors();
+});
+
+test('authenticated users can delete a non-system parameter', function () {
+    $user = User::factory()->create();
     $parameter = Parameter::factory()->create();
 
-    $this->get(route('parameters.show', $parameter))
-        ->assertRedirect(route('login'));
+    $this->actingAs($user)
+        ->delete(route('parameters.destroy', $parameter))
+        ->assertRedirect(route('parameters.index'));
+
+    expect(Parameter::find($parameter->id))->toBeNull()
+        ->and(Parameter::withTrashed()->find($parameter->id)->trashed())->toBeTrue()
+        ->and(Parameter::withTrashed()->find($parameter->id)->deleted_by)->toBe($user->id);
 });
 
-test('authenticated users can open the parameter detail page', function () {
-    $actor = User::factory()->create();
-    $parameter = Parameter::factory()->create([
-        'code' => 'status_active',
-        'value' => 'Active',
-    ]);
+test('system parameters cannot be deleted', function () {
+    $user = User::factory()->create();
+    $parameter = Parameter::factory()->system()->create();
 
-    $this->actingAs($actor)
-        ->get(route('parameters.show', $parameter))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('parameters/show')
-            ->where('parameter.id', $parameter->id)
-            ->where('parameter.code', 'status_active')
-            ->where('parameter.value', 'Active')
-            ->where('parameter.can_update', true)
-            ->where('parameter.can_delete', true),
-        );
-});
-
-test('a system parameter cannot be deleted', function () {
-    $actor = User::factory()->create();
-    $parameter = Parameter::factory()->create(['is_system' => true]);
-
-    $this->actingAs($actor)
-        ->get(route('parameters.show', $parameter))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('parameters/show')
-            ->where('parameter.can_delete', false),
-        );
-
-    $this->actingAs($actor)
+    $this->actingAs($user)
         ->delete(route('parameters.destroy', $parameter))
         ->assertForbidden();
 
-    $this->assertModelExists($parameter);
-});
-
-test('authenticated users can open the edit parameter page', function () {
-    $actor = User::factory()->create();
-    $parameter = Parameter::factory()->create([
-        'code' => 'status_active',
-        'value' => 'Active',
-    ]);
-
-    $this->actingAs($actor)
-        ->get(route('parameters.edit', $parameter))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('parameters/edit')
-            ->where('parameter.id', $parameter->id)
-            ->where('parameter.code', 'status_active')
-            ->where('parameter.value', 'Active'),
-        );
-});
-
-test('a parameter can be updated and records the updating actor', function () {
-    $actor = User::factory()->create();
-    $parameter = Parameter::factory()->create([
-        'group' => 'status',
-        'code' => 'status_active',
-        'value' => 'Active',
-    ]);
-
-    $this->actingAs($actor)
-        ->put(route('parameters.update', $parameter), [
-            'group' => 'status',
-            'code' => 'status_active',
-            'value' => 'Updated value',
-            'is_active' => '1',
-            'is_system' => '0',
-            'sort_order' => 5,
-        ])
-        ->assertSessionHasNoErrors()
-        ->assertRedirect(route('parameters.index'));
-
-    $parameter->refresh();
-
-    expect($parameter->value)->toBe('Updated value')
-        ->and($parameter->sort_order)->toBe(5)
-        ->and($parameter->updated_by)->toBe($actor->id);
-});
-
-test('a parameter can be deleted and records the deleting actor', function () {
-    $actor = User::factory()->create();
-    $parameter = Parameter::factory()->create();
-
-    $this->actingAs($actor)
-        ->delete(route('parameters.destroy', $parameter))
-        ->assertRedirect(route('parameters.index'));
-
-    expect(Parameter::find($parameter->id))->toBeNull();
-
-    $trashed = Parameter::withTrashed()->find($parameter->id);
-
-    expect($trashed)->not->toBeNull()
-        ->and($trashed->deleted_by)->toBe($actor->id)
-        ->and($trashed->trashed())->toBeTrue();
+    expect(Parameter::find($parameter->id))->not->toBeNull();
 });

@@ -50,11 +50,11 @@ import { useInitials } from '@/hooks/use-initials';
 import { dashboard } from '@/routes';
 import { index as example4Index } from '@/routes/example4';
 import type { Paginated } from '@/types';
-import {
-    statusLabel,
-    type ExampleFilters,
-    type ExampleRecord,
-    type ExampleSortColumn,
+import { statusLabel } from '@/types/example-record';
+import type {
+    ExampleFilters,
+    ExampleRecord,
+    ExampleSortColumn,
 } from '@/types/example-record';
 import Example4DeleteButton from './example4-delete-button';
 import Example4Sheets from './example4-sheets';
@@ -274,12 +274,12 @@ export default function Example4Index({ example4, filters }: Props) {
                             ) : (
                                 <div className="overflow-x-auto">
                                     <Table className="[&_td]:px-4 [&_th]:px-4">
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-12">
-                                                No
-                                            </TableHead>
-                                            <SortableHead
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead className="w-12">
+                                                    No
+                                                </TableHead>
+                                                <SortableHead
                                                     column="name"
                                                     filters={filters}
                                                 >
@@ -312,105 +312,117 @@ export default function Example4Index({ example4, filters }: Props) {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                        {example4.data.map((record, index) => (
-                                            <TableRow key={record.id}>
-                                                <TableCell className="text-muted-foreground tabular-nums">
-                                                    {example4.from !== null
-                                                        ? example4.from + index
-                                                        : index + 1}
-                                                </TableCell>
-                                                <TableCell>
-                                                        <div className="flex items-center gap-3">
-                                                            <Avatar className="size-8">
-                                                                <AvatarFallback className="text-xs">
-                                                                    {getInitials(
-                                                                        record.name,
-                                                                    )}
-                                                                </AvatarFallback>
-                                                            </Avatar>
-                                                            <button
-                                                                type="button"
-                                                                className="text-left font-medium hover:underline"
-                                                                onClick={() =>
-                                                                    setSheet({
-                                                                        type: 'view',
-                                                                        record,
-                                                                    })
-                                                                }
-                                                            >
-                                                                {record.name}
-                                                            </button>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {record.department}
-                                                    </TableCell>
-                                                    <TableCell className="text-muted-foreground">
-                                                        {record.position}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge
-                                                            variant={
-                                                                record.status ===
-                                                                'active'
-                                                                    ? 'default'
-                                                                    : 'secondary'
-                                                            }
-                                                        >
-                                                            {statusLabel(
-                                                                record.status,
-                                                            )}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="text-muted-foreground">
-                                                        {format(
-                                                            new Date(
-                                                                record.join_date,
-                                                            ),
-                                                            'MMM d, yyyy',
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex items-center justify-end gap-1">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    setSheet({
-                                                                        type: 'view',
-                                                                        record,
-                                                                    })
-                                                                }
-                                                            >
-                                                                <Eye data-icon="inline-start" />
-                                                                View
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    setSheet({
-                                                                        type: 'edit',
-                                                                        record,
-                                                                    })
-                                                                }
-                                                            >
-                                                                <Pencil data-icon="inline-start" />
-                                                                Edit
-                                                            </Button>
-                                                            {record.can_delete && (
-                                                                <Example4DeleteButton
-                                                                    record={
-                                                                        record
+                                            {example4.data.map(
+                                                (record, index) => (
+                                                    <TableRow key={record.id}>
+                                                        <TableCell className="text-muted-foreground tabular-nums">
+                                                            {example4.from !==
+                                                            null
+                                                                ? example4.from +
+                                                                  index
+                                                                : index + 1}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex items-center gap-3">
+                                                                <Avatar className="size-8">
+                                                                    <AvatarFallback className="text-xs">
+                                                                        {getInitials(
+                                                                            record.name,
+                                                                        )}
+                                                                    </AvatarFallback>
+                                                                </Avatar>
+                                                                <button
+                                                                    type="button"
+                                                                    className="text-left font-medium hover:underline"
+                                                                    onClick={() =>
+                                                                        setSheet(
+                                                                            {
+                                                                                type: 'view',
+                                                                                record,
+                                                                            },
+                                                                        )
                                                                     }
-                                                                />
+                                                                >
+                                                                    {
+                                                                        record.name
+                                                                    }
+                                                                </button>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {record.department}
+                                                        </TableCell>
+                                                        <TableCell className="text-muted-foreground">
+                                                            {record.position}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Badge
+                                                                variant={
+                                                                    record.status ===
+                                                                    'active'
+                                                                        ? 'default'
+                                                                        : 'secondary'
+                                                                }
+                                                            >
+                                                                {statusLabel(
+                                                                    record.status,
+                                                                )}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="text-muted-foreground">
+                                                            {format(
+                                                                new Date(
+                                                                    record.join_date,
+                                                                ),
+                                                                'MMM d, yyyy',
                                                             )}
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex items-center justify-end gap-1">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        setSheet(
+                                                                            {
+                                                                                type: 'view',
+                                                                                record,
+                                                                            },
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Eye data-icon="inline-start" />
+                                                                    View
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        setSheet(
+                                                                            {
+                                                                                type: 'edit',
+                                                                                record,
+                                                                            },
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Pencil data-icon="inline-start" />
+                                                                    Edit
+                                                                </Button>
+                                                                {record.can_delete && (
+                                                                    <Example4DeleteButton
+                                                                        record={
+                                                                            record
+                                                                        }
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ),
+                                            )}
                                         </TableBody>
                                     </Table>
                                 </div>

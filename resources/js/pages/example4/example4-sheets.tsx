@@ -7,11 +7,11 @@ import {
     ContentSidePanelLayout,
     ContentSidePanelTitle,
 } from '@/components/content-side-panel';
-import ExampleRecordForm from '@/components/example-record-form';
 import {
     ExampleRecordDetailRows,
     exampleRecordFormValues,
 } from '@/components/example-record-detail';
+import ExampleRecordForm from '@/components/example-record-form';
 import type { ExampleRecord } from '@/types/example-record';
 
 export type ListedExample4 = ExampleRecord;
@@ -39,7 +39,9 @@ function Example4PanelContent({
         return (
             <>
                 <ContentSidePanelHeader onClose={onClose}>
-                    <ContentSidePanelTitle>Add New Record</ContentSidePanelTitle>
+                    <ContentSidePanelTitle>
+                        Add New Record
+                    </ContentSidePanelTitle>
                     <ContentSidePanelDescription>
                         Create a demo employee profile for Example 4 (panel
                         inline).

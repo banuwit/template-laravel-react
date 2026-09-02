@@ -1,0 +1,328 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+
+class ParameterSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        $now = now();
+        $actorId = User::query()->where('email', 'test@example.com')->value('id');
+
+        foreach ($this->parameters() as $index => $parameter) {
+            if (DB::table('parameters')->where('code', $parameter['code'])->exists()) {
+                continue;
+            }
+
+            DB::table('parameters')->insert([
+                ...$parameter,
+                'sort_order' => $index + 1,
+                'created_by' => $actorId,
+                'updated_by' => $actorId,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+    }
+
+    /**
+     * @return list<array{
+     *     group: string,
+     *     code: string,
+     *     value: string,
+     *     description: string,
+     *     text_color: string,
+     *     bg_color: string,
+     *     attributes: null,
+     *     is_system: bool,
+     *     is_active: bool
+     * }>
+     */
+    private function parameters(): array
+    {
+        return [
+            [
+                'group' => 'status',
+                'code' => 'status_active',
+                'value' => 'Active',
+                'description' => 'Record is available for use.',
+                'text_color' => '#166534',
+                'bg_color' => '#dcfce7',
+                'attributes' => null,
+                'is_system' => true,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'status',
+                'code' => 'status_inactive',
+                'value' => 'Inactive',
+                'description' => 'Record is hidden from default lists.',
+                'text_color' => '#9a3412',
+                'bg_color' => '#ffedd5',
+                'attributes' => null,
+                'is_system' => true,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'gender',
+                'code' => 'gender_male',
+                'value' => 'Male',
+                'description' => 'Male gender option.',
+                'text_color' => '#1e40af',
+                'bg_color' => '#dbeafe',
+                'attributes' => null,
+                'is_system' => true,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'gender',
+                'code' => 'gender_female',
+                'value' => 'Female',
+                'description' => 'Female gender option.',
+                'text_color' => '#9d174d',
+                'bg_color' => '#fce7f3',
+                'attributes' => null,
+                'is_system' => true,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'gender',
+                'code' => 'gender_other',
+                'value' => 'Other',
+                'description' => 'Other or unspecified gender option.',
+                'text_color' => '#6b21a8',
+                'bg_color' => '#f3e8ff',
+                'attributes' => null,
+                'is_system' => true,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'priority',
+                'code' => 'priority_low',
+                'value' => 'Low',
+                'description' => 'Lowest urgency.',
+                'text_color' => '#334155',
+                'bg_color' => '#e2e8f0',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'priority',
+                'code' => 'priority_medium',
+                'value' => 'Medium',
+                'description' => 'Normal urgency.',
+                'text_color' => '#854d0e',
+                'bg_color' => '#fef9c3',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'priority',
+                'code' => 'priority_high',
+                'value' => 'High',
+                'description' => 'Needs attention soon.',
+                'text_color' => '#9a3412',
+                'bg_color' => '#ffedd5',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'priority',
+                'code' => 'priority_urgent',
+                'value' => 'Urgent',
+                'description' => 'Requires immediate action.',
+                'text_color' => '#991b1b',
+                'bg_color' => '#fee2e2',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'yes_no',
+                'code' => 'yn_yes',
+                'value' => 'Yes',
+                'description' => 'Affirmative option.',
+                'text_color' => '#166534',
+                'bg_color' => '#dcfce7',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'yes_no',
+                'code' => 'yn_no',
+                'value' => 'No',
+                'description' => 'Negative option.',
+                'text_color' => '#991b1b',
+                'bg_color' => '#fee2e2',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'department',
+                'code' => 'dept_engineering',
+                'value' => 'Engineering',
+                'description' => 'Product and platform engineering.',
+                'text_color' => '#1e3a8a',
+                'bg_color' => '#dbeafe',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'department',
+                'code' => 'dept_marketing',
+                'value' => 'Marketing',
+                'description' => 'Growth and campaign teams.',
+                'text_color' => '#9d174d',
+                'bg_color' => '#fce7f3',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'department',
+                'code' => 'dept_operations',
+                'value' => 'Operations',
+                'description' => 'Day-to-day operational support.',
+                'text_color' => '#155e75',
+                'bg_color' => '#cffafe',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'department',
+                'code' => 'dept_finance',
+                'value' => 'Finance',
+                'description' => 'Accounting and financial planning.',
+                'text_color' => '#166534',
+                'bg_color' => '#dcfce7',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'locale',
+                'code' => 'locale_en',
+                'value' => 'English',
+                'description' => 'English language locale.',
+                'text_color' => '#1e40af',
+                'bg_color' => '#dbeafe',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'locale',
+                'code' => 'locale_id',
+                'value' => 'Indonesian',
+                'description' => 'Bahasa Indonesia locale.',
+                'text_color' => '#9a3412',
+                'bg_color' => '#ffedd5',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'weekday',
+                'code' => 'day_monday',
+                'value' => 'Monday',
+                'description' => 'First working day of the week.',
+                'text_color' => '#334155',
+                'bg_color' => '#e2e8f0',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'weekday',
+                'code' => 'day_tuesday',
+                'value' => 'Tuesday',
+                'description' => 'Second working day of the week.',
+                'text_color' => '#334155',
+                'bg_color' => '#e2e8f0',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'weekday',
+                'code' => 'day_wednesday',
+                'value' => 'Wednesday',
+                'description' => 'Mid-week working day.',
+                'text_color' => '#334155',
+                'bg_color' => '#e2e8f0',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'payment',
+                'code' => 'pay_cash',
+                'value' => 'Cash',
+                'description' => 'Paid in cash.',
+                'text_color' => '#166534',
+                'bg_color' => '#dcfce7',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'payment',
+                'code' => 'pay_transfer',
+                'value' => 'Bank transfer',
+                'description' => 'Paid by bank transfer.',
+                'text_color' => '#1e40af',
+                'bg_color' => '#dbeafe',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'payment',
+                'code' => 'pay_card',
+                'value' => 'Card',
+                'description' => 'Paid by debit or credit card.',
+                'text_color' => '#6b21a8',
+                'bg_color' => '#f3e8ff',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'approval',
+                'code' => 'approval_pending',
+                'value' => 'Pending',
+                'description' => 'Waiting for a decision.',
+                'text_color' => '#854d0e',
+                'bg_color' => '#fef9c3',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+            [
+                'group' => 'approval',
+                'code' => 'approval_approved',
+                'value' => 'Approved',
+                'description' => 'Request has been approved.',
+                'text_color' => '#166534',
+                'bg_color' => '#dcfce7',
+                'attributes' => null,
+                'is_system' => false,
+                'is_active' => true,
+            ],
+        ];
+    }
+}
