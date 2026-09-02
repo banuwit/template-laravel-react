@@ -57,6 +57,14 @@ export interface DataGridServerProps<TData extends RowData> {
      * prop across every column that doesn't set its own. Default: true.
      */
     showHeaderVisibilityToggle?: boolean;
+    /**
+     * Stable row id, e.g. `(row) => String(row.id)`. Without this, TanStack
+     * falls back to the row's index as its id — after a delete or a page/sort
+     * change, a row's index gets reused by a *different* record, and any
+     * row-local React state (an open menu, a confirmation dialog) leaks onto
+     * it instead of resetting. Always pass this when rows have a stable id.
+     */
+    getRowId?: (row: TData, index: number) => string;
     defaults?: DataGridServerDefaults;
     /** Pagination style, or `none` to hide it (e.g. the query returns every row already). Default: `advance`. */
     pagination?: 'advance' | 'simple' | 'none';
@@ -79,6 +87,7 @@ export function DataGridServer<TData extends RowData>({
     actions,
     showVisibilityToggle = true,
     showHeaderVisibilityToggle = true,
+    getRowId,
     defaults = {},
     pagination = 'advance',
     emptyTitle,
@@ -200,6 +209,7 @@ export function DataGridServer<TData extends RowData>({
         data: paginated.data,
         columns,
         meta: { showHeaderVisibilityToggle },
+        getRowId,
         manualPagination: true,
         manualSorting: true,
         manualFiltering: true,

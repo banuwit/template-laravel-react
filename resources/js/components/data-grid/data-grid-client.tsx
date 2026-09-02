@@ -44,6 +44,14 @@ export interface DataGridClientProps<TData extends RowData> {
      * prop across every column that doesn't set its own. Default: true.
      */
     showHeaderVisibilityToggle?: boolean;
+    /**
+     * Stable row id, e.g. `(row) => String(row.id)`. Without this, TanStack
+     * falls back to the row's index as its id — after a delete, sort, or
+     * filter change, a row's index gets reused by a *different* record, and
+     * any row-local React state (an open menu, a confirmation dialog) leaks
+     * onto it instead of resetting. Always pass this when rows have a stable id.
+     */
+    getRowId?: (row: TData, index: number) => string;
     emptyTitle?: string;
     emptyDescription?: string;
     emptyFilteredTitle?: string;
@@ -60,6 +68,7 @@ export function DataGridClient<TData extends RowData>({
     actions,
     showVisibilityToggle = true,
     showHeaderVisibilityToggle = true,
+    getRowId,
     emptyTitle,
     emptyDescription,
     emptyFilteredTitle,
@@ -86,6 +95,7 @@ export function DataGridClient<TData extends RowData>({
         data,
         columns,
         meta: { showHeaderVisibilityToggle },
+        getRowId,
         enableSortingRemoval: false,
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,

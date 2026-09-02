@@ -6,14 +6,7 @@ Starter kit full-stack yang menggabungkan **Laravel 13**, **Inertia.js v3**, dan
 
 - **Autentikasi lengkap** — login, register, verifikasi email, reset password, konfirmasi password, dan two-factor authentication (2FA) dengan recovery codes.
 - **Manajemen profil & keamanan** — update profil, ganti password, kelola 2FA di halaman Settings.
-- **Contoh CRUD dengan 4 pola UI berbeda**, masing-masing punya implementasi kanonik di codebase:
-    | Resource   | Pola UI                                                   |
-    | ---------- | --------------------------------------------------------- |
-    | `users`    | Halaman terpisah (`create.tsx` / `edit.tsx` / `show.tsx`) |
-    | `example1` | Halaman terpisah (sama seperti `users`)                   |
-    | `example2` | Dialog (shadcn `Dialog`)                                  |
-    | `example3` | Sheet (Radix `Sheet`, overlay dari kanan)                 |
-    | `example4` | Panel inline (non-modal, menyusutkan area konten)         |
+- **CRUD dengan 4 pola UI** (halaman baru, dialog, sheet, panel inline) — spesifikasi ada di `.agents/rules/crud-pattern.md`. Resource `users` adalah contoh hidup untuk pola halaman terpisah.
 - **List page baku**: pencarian (debounced), sorting dengan whitelist kolom, dan pagination — semua sinkron dengan query string URL.
 - **Typed routing end-to-end** lewat [Laravel Wayfinder](https://github.com/laravel/wayfinder) — tidak ada URL yang di-hardcode di frontend.
 - Test suite [Pest](https://pestphp.com/) yang mencakup seluruh alur auth dan CRUD.
@@ -94,7 +87,7 @@ app/
 ├── Actions/Fortify/       # Aksi custom Fortify (create user, reset password)
 ├── Concerns/              # Trait validasi yang dipakai bersama antar Form Request
 ├── Http/
-│   ├── Controllers/       # Controller resource (Users, Example1–3, Parameters, Settings)
+│   ├── Controllers/       # Controller resource (Users, Parameters, Settings)
 │   ├── Requests/          # Satu Form Request per aksi (Index/Store/Update)
 │   └── Middleware/
 ├── Models/                # Eloquent models
@@ -165,7 +158,7 @@ Proyek ini punya konvensi baku untuk halaman list + CRUD Inertia (lihat `.agents
 
 1. Scaffold controller, Form Request (`Index{Model}Request`), Policy, dan test lewat Artisan.
 2. Daftarkan route di `routes/web.php` di dalam group `auth`+`verified`.
-3. Pilih salah satu dari 4 pola UI create/edit/view (halaman baru, dialog, sheet, atau panel inline) — ikuti contoh resource yang sudah ada (`users` / `example1`, `example2`, `example3`, `example4`).
+3. Pilih salah satu dari 4 pola UI create/edit/view (halaman baru, dialog, sheet, atau panel inline) — lihat `.agents/rules/crud-pattern.md`. Resource `users` adalah contoh hidup untuk pola halaman baru.
 4. Generate ulang Wayfinder setelah menambah route.
 5. Daftarkan menu navigasi di `app-sidebar.tsx` dan `app-header.tsx`.
 6. Tulis test Pest dengan `assertInertia`.

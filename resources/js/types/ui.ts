@@ -9,7 +9,7 @@ export type AppLayoutProps = {
 export type AppVariant = 'header' | 'sidebar';
 
 export type FlashToast = {
-    type: 'success' | 'info' | 'warning' | 'error';
+    type: 'default' | 'success' | 'info' | 'warning' | 'error';
     message: string;
 };
 

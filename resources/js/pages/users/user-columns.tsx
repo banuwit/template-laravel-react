@@ -1,10 +1,10 @@
 import { Link } from '@inertiajs/react';
 import { createColumnHelper } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Eye, MoreHorizontal, Pencil } from 'lucide-react';
+import { Eye, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import * as React from 'react';
 import type { DataGridFeatures } from '@/components/data-grid/data-grid-features';
 import { DataGridHeader } from '@/components/data-grid/data-grid-header';
-import { DataGridHeaderDropdown } from '@/components/data-grid/data-grid-header-dropdown';
 import { DataGridHeaderSort } from '@/components/data-grid/data-grid-header-sort';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -55,41 +55,69 @@ function NameCell({ user }: { user: ListedUser }) {
 }
 
 function RowActions({ user }: { user: ListedUser }) {
+    // The delete confirmation can't live inside `DropdownMenuContent`: Radix
+    // unmounts that content as soon as the menu closes (which happens on
+    // selecting any item), taking the `AlertDialog` and its `open` state
+    // down with it before the dialog ever gets a chance to show. Keeping
+    // `open` here, above the menu, and rendering `UserDeleteButton` as a
+    // sibling of `DropdownMenu` keeps the dialog alive after the menu closes.
+    const [deleteOpen, setDeleteOpen] = React.useState(false);
+
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon-sm">
-                    <span className="sr-only">Open menu</span>
-                    <MoreHorizontal />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                    asChild
-                    className="data-highlighted:bg-accent! data-highlighted:text-accent-foreground!"
-                >
-                    <Link href={usersShow(user.id)}>
-                        <Eye />
-                        View
-                    </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    asChild
-                    className="data-highlighted:bg-accent! data-highlighted:text-accent-foreground!"
-                >
-                    <Link href={usersEdit(user.id)}>
-                        <Pencil />
-                        Edit
-                    </Link>
-                </DropdownMenuItem>
-                {user.can_delete && (
-                    <>
-                        <DropdownMenuSeparator />
-                        <UserDeleteButton user={user} asMenuItem />
-                    </>
-                )}
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon-sm">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                        asChild
+                        className="data-highlighted:bg-accent! data-highlighted:text-accent-foreground!"
+                    >
+                        <Link href={usersShow(user.id)}>
+                            <Eye />
+                            View
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        asChild
+                        className="data-highlighted:bg-accent! data-highlighted:text-accent-foreground!"
+                    >
+                        <Link href={usersEdit(user.id)}>
+                            <Pencil />
+                            Edit
+                        </Link>
+                    </DropdownMenuItem>
+                    {user.can_delete && (
+                        <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                variant="destructive"
+                                className="data-highlighted:bg-destructive/10! data-highlighted:text-destructive!"
+                                onSelect={() => {
+                                    // Deferred past the menu's own close so
+                                    // the two don't race each other.
+                                    setTimeout(() => setDeleteOpen(true), 0);
+                                }}
+                            >
+                                <Trash2 />
+                                Delete
+                            </DropdownMenuItem>
+                        </>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
+            {user.can_delete && (
+                <UserDeleteButton
+                    user={user}
+                    open={deleteOpen}
+                    onOpenChange={setDeleteOpen}
+                />
+            )}
+        </>
     );
 }
 
@@ -116,12 +144,7 @@ export const userColumns = columnHelper.columns([
     }),
     columnHelper.accessor('name', {
         header: ({ column }) => (
-            <DataGridHeaderDropdown
-                column={column}
-                table={column.table}
-                columnVisibility={column.table.store.state.columnVisibility}
-                title="Name"
-            />
+            <DataGridHeaderSort column={column} title="Name" />
         ),
         cell: ({ row }) => <NameCell user={row.original} />,
     }),
@@ -192,7 +215,7 @@ export const userColumns = columnHelper.columns([
     }),
     columnHelper.display({
         id: 'actions',
-        header: () => <DataGridHeader title="" align="right" />,
+        header: () => <div className="text-right"></div>,
         cell: ({ row }) => <RowActions user={row.original} />,
     }),
 ]);

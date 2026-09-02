@@ -255,7 +255,7 @@ Starter kit Laravel 13 + Inertia.js v3 + React 19 (PHP 8.5, TypeScript). Fortify
 
 ### Struktur frontend (`resources/js/`)
 
-- `pages/` — komponen halaman Inertia, satu direktori per resource (`users`, `example1`, `example2`, `example3`, `example4`, `settings`, `auth`). Halaman selain `auth`/`settings` otomatis dapat app layout; set `Component.layout = { breadcrumbs: [...] }` di tiap halaman.
+- `pages/` — komponen halaman Inertia, satu direktori per resource (`users`, `parameters`, `countries`, `provinces`, `cities`, `menus`, `settings`, `auth`). Halaman selain `auth`/`settings` otomatis dapat app layout; set `Component.layout = { breadcrumbs: [...] }` di tiap halaman.
 - `actions/` dan `routes/` — hasil generate Wayfinder; import fungsi route/controller dari sini alih-alih hardcode URL (`@/routes/{resource}`, `@/actions/...`). Jangan pernah menulis path string manual seperti `'/users'`.
 - `components/ui/` — primitive shadcn; perlakukan sebagai shared, jangan ubah `sheet.tsx` dll. tanpa permintaan eksplisit.
 - `components/content-side-panel.tsx` — primitive panel inline non-modal custom yang dipakai pola CRUD "panel inline" (berbeda dari Radix `Sheet`).

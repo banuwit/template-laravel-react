@@ -61,6 +61,7 @@ export default function UsersIndex({
                             paginated={users}
                             filters={filters}
                             url={usersIndex.url()}
+                            getRowId={(user) => String(user.id)}
                             toolbar={{
                                 searches: [
                                     {
@@ -105,7 +106,7 @@ export default function UsersIndex({
                                 sort: 'created_at',
                                 direction: 'desc',
                             }}
-                            showVisibilityToggle={true}
+                            showVisibilityToggle={false}
                             showHeaderVisibilityToggle={true}
 
                             pagination="advance"

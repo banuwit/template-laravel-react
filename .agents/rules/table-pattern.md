@@ -19,9 +19,9 @@ Placeholder kode di dokumen ini sama dengan `crud-pattern.md`: `{Model}`, `{reso
 
 ---
 
-## Langkah 0 — tanya user empat hal (WAJIB)
+## Langkah 0 — tanya user lima hal (WAJIB)
 
-Sebelum menulis satu baris kode tabel, tanyakan keempatnya sekaligus. Lewati pertanyaan **hanya** kalau user sudah menyatakannya di permintaan yang sama.
+Sebelum menulis satu baris kode tabel, tanyakan kelimanya sekaligus. Lewati pertanyaan **hanya** kalau user sudah menyatakannya di permintaan yang sama.
 
 ### 1. Paket mana?
 
@@ -98,7 +98,156 @@ Kedua paket punya prop `pagination` yang sama bentuknya di `Client` **dan** `Ser
 
 Detail pilihan komponen filter (kapan `FacetedFilter`, kapan `SelectBox`) ada di **`filter-pattern.md`**. Tanyakan itu juga kalau user butuh filter.
 
-### Pertanyaan kelima yang sering terlupa
+### 5. Kolom actions seperti apa?
+
+Berlaku untuk **kedua** paket tabel (`data-grid` dan `data-table`) — pilihan ini murni di kolom `actions`, tidak terikat paket tabel yang dipakai.
+
+| Opsi                    | Trigger                                          | Cocok untuk                                                                          | Contoh hidup                    |
+| ------------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------- |
+| **Dropdown**             | Satu tombol `MoreHorizontal` (ikon titik tiga)     | Banyak aksi (≥3) atau aksi yang jarang dipakai — hemat ruang, satu klik buka menu     | `resources/js/pages/users/user-columns.tsx` |
+| **Button icon only**     | Satu tombol ikon per aksi, dengan `Tooltip`        | Sedikit aksi (2-3) yang sering dipakai — semua aksi langsung terlihat tanpa buka menu | `resources/js/pages/parameters/index.tsx`   |
+
+Kalau user tidak punya preferensi kuat, **sarankan button icon only** untuk 2 aksi (Edit + Delete) dan **dropdown** begitu ada 3 aksi atau lebih (View + Edit + Delete, dst.).
+
+Delete **selalu** `AlertDialog` di kedua opsi (lihat `crud-pattern.md` B.6) — bedanya cuma bagaimana ia dipicu.
+
+#### Template: Button icon only
+
+Satu `Button` `variant="secondary" size="icon-sm"` per aksi, dibungkus `Tooltip`, sejajar dengan `justify-end`. Tombol delete memakai komponen `{resource}-delete-button.tsx` yang sudah membawa `AlertDialog`-nya sendiri.
+
+```tsx
+import { Eye, Pencil } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {Model}DeleteButton from './{resource}-delete-button';
+
+function RowActions({ record, onView, onEdit }: { record: Listed{Model}; onView: () => void; onEdit: () => void }) {
+    return (
+        <div className="flex items-center justify-end gap-1">
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="secondary" size="icon-sm" type="button" aria-label="View" onClick={onView}>
+                        <Eye />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>View</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="secondary" size="icon-sm" type="button" aria-label="Edit" onClick={onEdit}>
+                        <Pencil />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edit</TooltipContent>
+            </Tooltip>
+            {record.can_delete && <{Model}DeleteButton record={record} />}
+        </div>
+    );
+}
+```
+
+`{resource}-delete-button.tsx` untuk varian ini biasanya `variant="destructive"` `size="icon-sm"` (bukan teks "Delete") supaya konsisten dengan tombol ikon di sebelahnya — lihat `resources/js/pages/parameters/parameter-delete-button.tsx` atau `resources/js/pages/cities/city-delete-button.tsx` sebagai contoh.
+
+#### Template: Dropdown
+
+Satu `Button variant="ghost" size="icon-sm"` sebagai trigger `DropdownMenu`, isi `DropdownMenuItem` per aksi. Aksi yang navigasi (`View`, `Edit`) pakai `asChild` + `Link` Wayfinder; aksi destructive dipisah `DropdownMenuSeparator` dan warna `variant="destructive"`.
+
+**Trap wajib dibaca**: `AlertDialog` delete **tidak boleh** dirender di dalam `DropdownMenuContent` — Radix unmount konten dropdown begitu menu tertutup (yang terjadi begitu sebuah item dipilih), ikut membawa turun `AlertDialog` dan state `open`-nya sebelum dialog sempat muncul. Solusinya: naikkan state `open` ke komponen `RowActions` (di atas `DropdownMenu`), render `{Model}DeleteButton` sebagai *sibling* dari `DropdownMenu` (bukan di dalam `DropdownMenuContent`), dan pilih item delete lewat `onSelect` yang men-defer `setOpen(true)` dengan `setTimeout(..., 0)` supaya tidak race dengan penutupan menu:
+
+```tsx
+import { Link } from '@inertiajs/react';
+import { Eye, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { edit as {resources}Edit, show as {resources}Show } from '@/routes/{resources}';
+import {Model}DeleteButton from './{resource}-delete-button';
+
+function RowActions({ record }: { record: Listed{Model} }) {
+    const [deleteOpen, setDeleteOpen] = React.useState(false);
+
+    return (
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon-sm">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                        <Link href={{resources}Show(record.id)}>
+                            <Eye />
+                            View
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href={{resources}Edit(record.id)}>
+                            <Pencil />
+                            Edit
+                        </Link>
+                    </DropdownMenuItem>
+                    {record.can_delete && (
+                        <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                variant="destructive"
+                                onSelect={() => {
+                                    setTimeout(() => setDeleteOpen(true), 0);
+                                }}
+                            >
+                                <Trash2 />
+                                Delete
+                            </DropdownMenuItem>
+                        </>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
+            {record.can_delete && (
+                <{Model}DeleteButton
+                    record={record}
+                    open={deleteOpen}
+                    onOpenChange={setDeleteOpen}
+                />
+            )}
+        </>
+    );
+}
+```
+
+Pola dropdown ini mengasumsikan pola UI "Halaman baru" (route `show`/`edit` terpisah, lihat `crud-pattern.md`). Untuk pola Dialog/Sheet/Panel inline, ganti `asChild` + `Link` dengan `onSelect` yang memanggil `setDialog({ type: 'edit', record })` / `setDialog({ type: 'view', record })` — pola men-defer + sibling-render untuk delete tetap sama.
+
+Karena `{Model}DeleteButton` di pola dropdown dikendalikan dari luar (bukan `AlertDialogTrigger` sendiri), tambahkan prop `open`/`onOpenChange` opsional pada komponennya:
+
+```tsx
+type Props = {
+    record: { id: number; name: string };
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+};
+
+export default function {Model}DeleteButton({ record, open, onOpenChange }: Props) {
+    return (
+        <AlertDialog open={open} onOpenChange={onOpenChange}>
+            {/* AlertDialogTrigger hanya dirender kalau komponen dipakai berdiri sendiri (varian icon only) */}
+            <AlertDialogContent>{/* ... */}</AlertDialogContent>
+        </AlertDialog>
+    );
+}
+```
+
+### Pertanyaan keenam yang sering terlupa
 
 **Data-nya dari mana?** Ini menentukan varian `Client` atau `Server` dan biasanya sudah ketahuan dari controller:
 
@@ -201,3 +350,4 @@ Kalau menambah kolom yang perlu filter facet, daftarkan `filterFn: 'multiValue'`
 - **`rowKey` itu penting.** Tanpa itu `data-table` memakai index array sebagai React key, yang bikin state baris (checkbox, menu terbuka) meloncat saat data berubah urutan. Selalu kirim `rowKey` kalau baris punya id.
 - **Jangan pasang TanStack langsung di halaman.** Kalau butuh TanStack, lewat `@/components/data-grid`. Kalau tidak, pakai `data-table`.
 - **Jangan bikin komponen pagination / search / sort header baru.** Semuanya sudah ada di kedua paket dan bisa dipakai lepas dari `Client`/`Server` (mis. `DataTableHeaderSort` di tabel yang ditulis tangan).
+- **`AlertDialog` delete di dalam `DropdownMenuContent` tidak pernah muncul.** Radix unmount konten dropdown begitu sebuah item dipilih, ikut membawa turun `AlertDialog` sebelum sempat tampil. Lihat solusinya (state `open` diangkat + render sibling + `setTimeout` di `onSelect`) di bagian **5. Kolom actions seperti apa? → Template: Dropdown** di atas.

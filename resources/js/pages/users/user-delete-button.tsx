@@ -1,6 +1,5 @@
 import { Form } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
-import * as React from 'react';
 import type { ComponentProps } from 'react';
 import UserController from '@/actions/App/Http/Controllers/UserController';
 import {
@@ -14,7 +13,6 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 
 type User = {
@@ -25,14 +23,22 @@ type User = {
 type Props =
     | {
           user: User;
-          asMenuItem?: false;
           variant?: ComponentProps<typeof Button>['variant'];
           size?: ComponentProps<typeof Button>['size'];
       }
     | {
           user: User;
-          /** Render as a `DropdownMenuItem` instead of a standalone button. */
-          asMenuItem: true;
+          /**
+           * Fully controlled, trigger-less mode: renders only the
+           * `AlertDialog`. Use this when the trigger has to live somewhere
+           * that unmounts on its own (e.g. a `DropdownMenuItem` inside a
+           * `DropdownMenuContent`, which Radix unmounts as soon as the menu
+           * closes) — nesting the dialog there too would unmount it before
+           * it ever gets to open. Render the trigger yourself and control
+           * `open` from a state that outlives the menu.
+           */
+          open: boolean;
+          onOpenChange: (open: boolean) => void;
       };
 
 function DeleteAlertDialogContent({ user }: { user: User }) {
@@ -67,29 +73,11 @@ function DeleteAlertDialogContent({ user }: { user: User }) {
 export default function UserDeleteButton(props: Props) {
     const { user } = props;
 
-    // A `DropdownMenuItem` can't be an `AlertDialogTrigger` directly: selecting
-    // it closes the menu, and opening the dialog synchronously in that same
-    // tick races the menu's own unmount/focus-return, so the dialog never
-    // actually shows. Deferring the open past the menu's close sidesteps it.
-    const [open, setOpen] = React.useState(false);
-
-    if (props.asMenuItem) {
+    if ('open' in props) {
         return (
-            <>
-                <DropdownMenuItem
-                    variant="destructive"
-                    className="data-highlighted:bg-destructive/10! data-highlighted:text-destructive!"
-                    onSelect={() => {
-                        setTimeout(() => setOpen(true), 0);
-                    }}
-                >
-                    <Trash2 />
-                    Delete
-                </DropdownMenuItem>
-                <AlertDialog open={open} onOpenChange={setOpen}>
-                    <DeleteAlertDialogContent user={user} />
-                </AlertDialog>
-            </>
+            <AlertDialog open={props.open} onOpenChange={props.onOpenChange}>
+                <DeleteAlertDialogContent user={user} />
+            </AlertDialog>
         );
     }
 
