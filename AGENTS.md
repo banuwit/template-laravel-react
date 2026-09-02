@@ -247,11 +247,11 @@ Starter kit Laravel 13 + Inertia.js v3 + React 19 (PHP 8.5, TypeScript). Fortify
 - Routes: `routes/web.php` (resource aplikasi, di dalam middleware group `auth`+`verified`) dan `routes/settings.php` (profile/security/appearance, kebutuhan middleware berbeda per aksi). Belum ada route API.
 
 ### Struktur frontend (`resources/js/`)
-- `pages/` — komponen halaman Inertia, satu direktori per resource (`users`, `countries`, `provinces`, `cities`, `settings`, `auth`). Halaman selain `auth`/`settings` otomatis dapat app layout; set `Component.layout = { breadcrumbs: [...] }` di tiap halaman.
+- `pages/` — komponen halaman Inertia, satu direktori per resource (`users`, `example1`, `example2`, `example3`, `example4`, `parameters`, `settings`, `auth`). Halaman selain `auth`/`settings` otomatis dapat app layout; set `Component.layout = { breadcrumbs: [...] }` di tiap halaman.
 - `actions/` dan `routes/` — hasil generate Wayfinder; import fungsi route/controller dari sini alih-alih hardcode URL (`@/routes/{resource}`, `@/actions/...`). Jangan pernah menulis path string manual seperti `'/users'`.
 - `components/ui/` — primitive shadcn; perlakukan sebagai shared, jangan ubah `sheet.tsx` dll. tanpa permintaan eksplisit.
 - `components/content-side-panel.tsx` — primitive panel inline non-modal custom yang dipakai pola CRUD "panel inline" (berbeda dari Radix `Sheet`).
-- `layouts/app`, `layouts/auth`, `layouts/settings` — shell layout.
+- `components/layouts/app`, `components/layouts/auth`, `components/layouts/settings` — shell layout.
 - `types/pagination.ts` — tipe `Paginated<T>` yang dipakai bersama; pakai ulang untuk resource paginated apa pun, jangan duplikasi bentuknya.
 
 ### Pola halaman list/CRUD (penting — baca sebelum menyentuh CRUD resource mana pun)
@@ -259,11 +259,11 @@ Starter kit Laravel 13 + Inertia.js v3 + React 19 (PHP 8.5, TypeScript). Fortify
 Proyek ini punya pola baku untuk halaman list + CRUD Inertia, didefinisikan di `.agents/rules/crud-pages.md`. Poin penting:
 
 - Halaman list dibangun manual (controller + Inertia + shadcn `Table`) — jangan pernah pakai Filament, generator CRUD, atau TanStack Table.
-- Ada **empat** varian UI create/edit/view, masing-masing punya contoh kanonik di codebase — jangan asumsikan mana yang dipakai:
-  - **Halaman baru** — `create.tsx`/`edit.tsx`/`show.tsx`, `Route::resource` lengkap. Contoh: **Users**.
-  - **Dialog** — shadcn `Dialog`, `only(['index','store','update','destroy'])`. Contoh: **Countries**.
-  - **Sheet** — Radix `Sheet` (`@/components/ui/sheet`), overlay modal dari kanan, route sama yang dibatasi. Contoh: **Provinces**.
-  - **Panel inline** — `@/components/content-side-panel` (non-modal, di dalam area konten app layout, list menyusut jadi 2 kolom), route sama yang dibatasi. Contoh: **Cities**.
+- Ada **empat** varian UI create/edit/view — jangan asumsikan mana yang dipakai. Template kode lengkap tiap varian ada di `.agents/rules/crud-pages.md` (mandiri, tidak bergantung halaman contoh):
+  - **Halaman baru** — `create.tsx`/`edit.tsx`/`show.tsx`, `Route::resource` lengkap.
+ - **Dialog** — shadcn `Dialog`, `only(['index','store','update','destroy'])`.
+ - **Sheet** — Radix `Sheet` (`@/components/ui/sheet`), overlay modal dari kanan, route sama yang dibatasi.
+ - **Panel inline** — `@/components/content-side-panel` (non-modal, di dalam area konten app layout, list menyusut jadi 2 kolom), route sama yang dibatasi.
 - **Sebelum scaffold create/edit/show untuk resource baru, tanya user mau pakai varian yang mana** — jangan asumsikan, kecuali user sudah menyatakan pilihannya di permintaan yang sama.
 - Delete selalu `AlertDialog` di list, apa pun varian yang dipilih.
 - Mode view (read-only) tidak pernah punya tombol Edit atau Close di footer — edit hanya dipicu dari kolom aksi list. `show.tsx` (halaman baru) punya tombol "Back to {resource}" sebagai gantinya.

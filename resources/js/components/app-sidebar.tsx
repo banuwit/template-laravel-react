@@ -1,12 +1,14 @@
 import { Link } from '@inertiajs/react';
 import {
     BookOpen,
-    Building2,
+    Columns2,
     FolderGit2,
-    Globe,
+    Layers,
     LayoutGrid,
-    MapPin,
+    MessageSquare,
+    PanelRight,
     SlidersHorizontal,
+    SquareStack,
     Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -23,10 +25,11 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import { index as cities } from '@/routes/cities';
-import { index as countries } from '@/routes/countries';
+import { index as example1 } from '@/routes/example1';
+import { index as example2 } from '@/routes/example2';
+import { index as example3 } from '@/routes/example3';
+import { index as example4 } from '@/routes/example4';
 import { index as parameters } from '@/routes/parameters';
-import { index as provinces } from '@/routes/provinces';
 import { index as users } from '@/routes/users';
 import type { NavItem } from '@/types';
 
@@ -42,19 +45,24 @@ const mainNavItems: NavItem[] = [
         icon: Users,
     },
     {
-        title: 'Countries',
-        href: countries(),
-        icon: Globe,
+        title: 'Example 1',
+        href: example1(),
+        icon: Layers,
     },
     {
-        title: 'Provinces',
-        href: provinces(),
-        icon: MapPin,
+        title: 'Example 2',
+        href: example2(),
+        icon: MessageSquare,
     },
     {
-        title: 'Cities',
-        href: cities(),
-        icon: Building2,
+        title: 'Example 3',
+        href: example3(),
+        icon: PanelRight,
+    },
+    {
+        title: 'Example 4',
+        href: example4(),
+        icon: Columns2,
     },
     {
         title: 'Parameters',

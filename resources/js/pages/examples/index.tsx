@@ -8,9 +8,9 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { columns } from './columns';
+import { columns } from './components/data-table-columns';
 import { data } from './data';
-import { DataTable } from './data-table';
+import { DataTable } from '@/components/data-table/data-table-client';
 
 export default function DemoPage() {
     return (
@@ -28,7 +28,14 @@ export default function DemoPage() {
                 
                 <Card className="gap-0 overflow-hidden py-0">
                     <CardContent className="p-4">
-                        <DataTable columns={columns} data={data} />
+                        <DataTable
+                            columns={columns}
+                            data={data}
+                            emptyTitle="No examples yet"
+                            emptyDescription="There is no example data to display yet."
+                            emptyFilteredTitle="No matching results"
+                            emptyFilteredDescription="Try a different name, or clear the search to see all rows."
+                        />
                     </CardContent>
                 </Card>
             </div>

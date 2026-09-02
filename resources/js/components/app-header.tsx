@@ -1,10 +1,13 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     BookOpen,
+    Columns2,
     Folder,
-    Globe,
+    Layers,
     LayoutGrid,
     Menu,
+    MessageSquare,
+    PanelRight,
     Search,
     SlidersHorizontal,
     Users,
@@ -42,7 +45,10 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useInitials } from '@/hooks/use-initials';
 import { cn, toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
-import { index as countries } from '@/routes/countries';
+import { index as example1 } from '@/routes/example1';
+import { index as example2 } from '@/routes/example2';
+import { index as example3 } from '@/routes/example3';
+import { index as example4 } from '@/routes/example4';
 import { index as parameters } from '@/routes/parameters';
 import { index as users } from '@/routes/users';
 import type { BreadcrumbItem, NavItem } from '@/types';
@@ -63,9 +69,24 @@ const mainNavItems: NavItem[] = [
         icon: Users,
     },
     {
-        title: 'Countries',
-        href: countries(),
-        icon: Globe,
+        title: 'Example 1',
+        href: example1(),
+        icon: Layers,
+    },
+    {
+        title: 'Example 2',
+        href: example2(),
+        icon: MessageSquare,
+    },
+    {
+        title: 'Example 3',
+        href: example3(),
+        icon: PanelRight,
+    },
+    {
+        title: 'Example 4',
+        href: example4(),
+        icon: Columns2,
     },
     {
         title: 'Parameters',

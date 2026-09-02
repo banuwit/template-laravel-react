@@ -1,7 +1,6 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import ParameterController from '@/actions/App/Http/Controllers/ParameterController';
 import Heading from '@/components/heading';
-import ParameterForm from '@/components/parameter-form';
 import {
     Card,
     CardContent,
@@ -11,6 +10,7 @@ import {
 } from '@/components/ui/card';
 import { dashboard } from '@/routes';
 import { edit, index as parametersIndex } from '@/routes/parameters';
+import ParameterForm from './parameter-form';
 
 type EditableParameter = {
     id: number;
@@ -67,9 +67,7 @@ export default function ParametersEdit({ parameter }: Props) {
                     </CardHeader>
                     <CardContent>
                         <ParameterForm
-                            form={ParameterController.update.form(
-                                parameter.id,
-                            )}
+                            form={ParameterController.update.form(parameter.id)}
                             parameter={parameter}
                             submitLabel="Save changes"
                         />

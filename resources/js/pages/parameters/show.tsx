@@ -3,7 +3,6 @@ import { format } from 'date-fns';
 import { ChevronLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 import Heading from '@/components/heading';
-import ParameterDeleteButton from '@/components/parameter-delete-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +15,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { dashboard } from '@/routes';
 import { index as parametersIndex, show } from '@/routes/parameters';
+import ParameterDeleteButton from './parameter-delete-button';
 
 type ShownParameter = {
     id: number;
@@ -155,9 +155,7 @@ export default function ParametersShow({ parameter }: Props) {
                                         </Badge>
                                     )}
                                     {parameter.is_system && (
-                                        <Badge variant="outline">
-                                            System
-                                        </Badge>
+                                        <Badge variant="outline">System</Badge>
                                     )}
                                 </div>
                             </DetailRow>

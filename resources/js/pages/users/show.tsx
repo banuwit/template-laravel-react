@@ -14,10 +14,10 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import UserDeleteButton from '@/components/user-delete-button';
 import { useInitials } from '@/hooks/use-initials';
 import { dashboard } from '@/routes';
 import { index as usersIndex, show } from '@/routes/users';
+import UserDeleteButton from './user-delete-button';
 
 type ShownUser = {
     id: number;

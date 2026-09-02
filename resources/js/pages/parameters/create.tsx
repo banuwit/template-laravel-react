@@ -1,7 +1,6 @@
 import { Head } from '@inertiajs/react';
 import ParameterController from '@/actions/App/Http/Controllers/ParameterController';
 import Heading from '@/components/heading';
-import ParameterForm from '@/components/parameter-form';
 import {
     Card,
     CardContent,
@@ -11,6 +10,7 @@ import {
 } from '@/components/ui/card';
 import { dashboard } from '@/routes';
 import { create, index as parametersIndex } from '@/routes/parameters';
+import ParameterForm from './parameter-form';
 
 export default function ParametersCreate() {
     return (

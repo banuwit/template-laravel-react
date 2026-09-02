@@ -142,9 +142,7 @@ export default function ParameterForm({ form, parameter, submitLabel }: Props) {
                         </div>
 
                         <Field
-                            data-invalid={
-                                errors.sort_order ? true : undefined
-                            }
+                            data-invalid={errors.sort_order ? true : undefined}
                         >
                             <FieldLabel htmlFor="sort_order">
                                 Sort order

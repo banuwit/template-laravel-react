@@ -44,7 +44,16 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function validExampleRecordPayload(array $overrides = []): array
 {
-    // ..
+    return array_merge([
+        'name' => 'Alex Rivera',
+        'email' => 'alex.rivera@example.com',
+        'phone' => '+1 555-0100',
+        'department' => 'Engineering',
+        'position' => 'Software Engineer',
+        'join_date' => '2024-01-15',
+        'gender' => 'male',
+        'status' => 'active',
+    ], $overrides);
 }

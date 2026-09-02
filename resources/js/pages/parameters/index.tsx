@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Heading from '@/components/heading';
-import ParameterDeleteButton from '@/components/parameter-delete-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -53,6 +52,7 @@ import {
     show as parametersShow,
 } from '@/routes/parameters';
 import type { Paginated } from '@/types';
+import ParameterDeleteButton from './parameter-delete-button';
 
 type ListedParameter = {
     id: number;
@@ -79,7 +79,10 @@ type Props = {
     filters: ParameterFilters;
 };
 
-function visit(filters: ParameterFilters, overrides: Partial<ParameterFilters> = {}) {
+function visit(
+    filters: ParameterFilters,
+    overrides: Partial<ParameterFilters> = {},
+) {
     const search = overrides.search ?? filters.search;
     const sort = overrides.sort ?? filters.sort;
     const direction = overrides.direction ?? filters.direction;
@@ -364,7 +367,9 @@ export default function ParametersIndex({ parameters, filters }: Props) {
                                                     </Button>
                                                     {parameter.can_delete && (
                                                         <ParameterDeleteButton
-                                                            parameter={parameter}
+                                                            parameter={
+                                                                parameter
+                                                            }
                                                         />
                                                     )}
                                                 </div>

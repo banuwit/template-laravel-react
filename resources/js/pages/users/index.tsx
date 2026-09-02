@@ -46,7 +46,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import UserDeleteButton from '@/components/user-delete-button';
 import { useInitials } from '@/hooks/use-initials';
 import { dashboard } from '@/routes';
 import {
@@ -56,6 +55,7 @@ import {
     show as usersShow,
 } from '@/routes/users';
 import type { Paginated } from '@/types';
+import UserDeleteButton from './user-delete-button';
 
 type ListedUser = {
     id: number;
