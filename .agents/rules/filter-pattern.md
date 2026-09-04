@@ -96,6 +96,34 @@ Tidak dirender langsung — cukup deklarasikan di `toolbar.facets`, dan `data-gr
 
 Di mode server, `key` facet dikirim sebagai query param — pastikan Form Request memvalidasinya dan controller memakainya.
 
+### Filter satu-pilihan di toolbar tabel (`SelectBox`, bukan `FacetedFilter`)
+
+Kalau filternya cuma boleh satu nilai dan harus langsung berlaku begitu diklik (tanpa Apply), pakai `toolbar.selects` — **`DataGridServer` saja**, `DataGridClient` belum mengimplementasikan ini:
+
+```tsx
+<DataGridServer
+    columns={columns}
+    paginated={{prop}}
+    filters={filters}
+    url={{resources}Index.url()}
+    toolbar={{
+        selects: [
+            {
+                key: 'status',
+                placeholder: 'Status',
+                options: [
+                    { value: 'active', label: 'Active' },
+                    { value: 'inactive', label: 'Inactive' },
+                ],
+                clearable: true,
+            },
+        ],
+    }}
+/>
+```
+
+`DataGridServer` merender tiap entri `selects` sebagai `SelectBox` mode single, lalu tetap mengirim nilainya sebagai array satu elemen (`status[]=active`) ke backend — sama seperti `facets`. Jadi filter `whereIn` yang sudah ada di controller/Form Request **tidak perlu diubah** saat suatu facet multi-pilihan diturunkan jadi single-pick di UI, cukup pindahkan definisinya dari `toolbar.facets` ke `toolbar.selects`.
+
 ### SelectBox sebagai form control
 
 ```tsx
@@ -174,3 +202,6 @@ Mode lain: `value` / `onValueChange` untuk controlled sederhana. Untuk option ya
 - **`SelectOption` adalah superset `FilterOption`**, jadi daftar option yang sama bisa dipakai di kedua komponen. Yang sebaliknya tidak berlaku: adornment (`avatar`, `badge`, `description`, `color`) hanya dirender `SelectBox`.
 - **Search `SelectBox` mencocokkan label, `value`, dan `keywords`.** Kalau `value`-nya id numerik, isi `keywords` supaya bisa dicari dengan kata yang manusiawi.
 - **Jangan pakai `ui/select.tsx` (Radix) untuk multi-select atau select ber-search** — primitive itu tidak mendukung keduanya. Itu alasan `SelectBox` dibangun di atas Popover + Command.
+- **Trigger `SelectBox` default `w-full`** (cocok untuk form control yang mau selebar field-nya). Begitu dipakai sebagai filter toolbar di sebelah `FacetedFilter` (yang triggernya selalu shrink-to-fit ke konten), `w-full` bikin dia melar memenuhi sisa baris — beda sendiri dari trigger lain di baris yang sama. `DataGridServer` sudah menambahkan `className="w-auto"` di setiap `SelectBox` yang dirender dari `toolbar.selects` supaya ukurannya konsisten dengan `FacetedFilter`; kalau merender `SelectBox` sebagai filter toolbar secara manual (bukan lewat `toolbar.selects`), tambahkan `className="w-auto"` yang sama.
+- **Warna trigger `SelectBox` sengaja disamakan dengan `FacetedFilter`.** Placeholder, label terpilih, dan chevron semuanya warna teks penuh (bukan `text-muted-foreground`) — persis seperti judul dan chevron `FacetedFilter` yang tidak pernah redup. Ini berlaku di semua pemakaian `SelectBox` (filter toolbar maupun form control di province/city/menu), bukan cuma di konteks filter. Jangan kembalikan `text-muted-foreground` ke placeholder/chevron dengan alasan "biar kayak native select" — itu perubahan yang disengaja.
+- **Icon clear (×) `SelectBox` warnanya `text-destructive`**, tanpa hover background — konsisten dengan elemen destructive lain di project (tombol delete, `DropdownMenuItem variant="destructive"`).

@@ -2,6 +2,8 @@ import { router } from '@inertiajs/react';
 import { useTable } from '@tanstack/react-table';
 import type {
     ColumnDef,
+    ColumnOrderState,
+    ColumnPinningState,
     ColumnVisibilityState,
     RowData,
     SortingState,
@@ -9,6 +11,7 @@ import type {
 import * as React from 'react';
 
 import { FacetedFilter } from '@/components/filters/faceted-filter';
+import { SelectBox } from '@/components/filters/select-box';
 import {
     Table,
     TableBody,
@@ -25,6 +28,7 @@ import type { DataGridFeatures } from './data-grid-features';
 import { DataGridLoading } from './data-grid-loading';
 import { DataGridPaginationAdvance } from './data-grid-pagination-advance';
 import { DataGridPaginationSimple } from './data-grid-pagination-simple';
+import { getPinnedCellProps, useColumnPinOffsets } from './data-grid-pinning';
 import { DataGridSearchInput } from './data-grid-search-input';
 import { DataGridVisibilityToggle } from './data-grid-visibility-toggle';
 import type { DataGridFilters, Paginated, ToolbarConfig } from './types';
@@ -50,13 +54,30 @@ export interface DataGridServerProps<TData extends RowData> {
     toolbar?: ToolbarConfig;
     /** Extra buttons rendered to the right of the visibility toggle. */
     actions?: React.ReactNode;
-    /** Hide the column visibility toggle. Default: true. */
+    /** Hide the toolbar's column visibility toggle. Default: true. */
     showVisibilityToggle?: boolean;
     /**
-     * Default for `DataGridHeaderDropdown`'s per-column `showVisibilityToggle`
-     * prop across every column that doesn't set its own. Default: true.
+     * Show the "View columns" submenu inside every `DataGridHeaderDropdown`.
+     * Default: true. A column can still override it per header.
      */
     showHeaderVisibilityToggle?: boolean;
+    /**
+     * Add "Pin to left" / "Pin to right" to the header dropdown and make
+     * pinned columns sticky while the grid scrolls sideways. Default: false.
+     */
+    enableColumnPinning?: boolean;
+    /**
+     * Add "Move to left" / "Move to right" to the header dropdown.
+     * Default: false.
+     */
+    enableColumnOrdering?: boolean;
+    /**
+     * Columns pinned on first render, e.g. `{ start: [], end: ['actions'] }`.
+     * Use this for label-only headers, which have no dropdown to pin from.
+     */
+    defaultColumnPinning?: ColumnPinningState;
+    /** Column ids in their initial order. Defaults to the column def order. */
+    defaultColumnOrder?: ColumnOrderState;
     /**
      * Stable row id, e.g. `(row) => String(row.id)`. Without this, TanStack
      * falls back to the row's index as its id — after a delete or a page/sort
@@ -87,6 +108,10 @@ export function DataGridServer<TData extends RowData>({
     actions,
     showVisibilityToggle = true,
     showHeaderVisibilityToggle = true,
+    enableColumnPinning = false,
+    enableColumnOrdering = false,
+    defaultColumnPinning,
+    defaultColumnOrder,
     getRowId,
     defaults = {},
     pagination = 'advance',
@@ -96,15 +121,16 @@ export function DataGridServer<TData extends RowData>({
     emptyFilteredDescription,
 }: DataGridServerProps<TData>) {
     const facets = toolbar?.facets ?? [];
+    const selects = toolbar?.selects ?? [];
     const searchConfigs = toolbar?.searches ?? [];
 
-    // True when a search box or facet is currently narrowing the result set —
-    // distinguishes "no rows in this filter" from "no rows at all" in the
-    // empty state.
+    // True when a search box, facet, or select is currently narrowing the
+    // result set — distinguishes "no rows in this filter" from "no rows at
+    // all" in the empty state.
     const isFiltered =
         searchConfigs.some((search) => !!filters[search.key]) ||
-        facets.some((facet) => {
-            const value = filters[facet.key];
+        [...facets, ...selects].some((filter) => {
+            const value = filters[filter.key];
 
             return Array.isArray(value) ? value.length > 0 : !!value;
         });
@@ -117,6 +143,13 @@ export function DataGridServer<TData extends RowData>({
 
     const [columnVisibility, setColumnVisibility] =
         React.useState<ColumnVisibilityState>({});
+    const [columnPinning, setColumnPinning] =
+        React.useState<ColumnPinningState>(
+            () => defaultColumnPinning ?? { start: [], end: [] },
+        );
+    const [columnOrder, setColumnOrder] = React.useState<ColumnOrderState>(
+        () => defaultColumnOrder ?? [],
+    );
     const [isPending, setIsPending] = React.useState(false);
 
     // Search is debounced locally, so it needs its own state; everything else
@@ -208,7 +241,6 @@ export function DataGridServer<TData extends RowData>({
         features,
         data: paginated.data,
         columns,
-        meta: { showHeaderVisibilityToggle },
         getRowId,
         manualPagination: true,
         manualSorting: true,
@@ -227,15 +259,30 @@ export function DataGridServer<TData extends RowData>({
             });
         },
         onColumnVisibilityChange: setColumnVisibility,
+        onColumnPinningChange: setColumnPinning,
+        onColumnOrderChange: setColumnOrder,
+        enableColumnPinning,
+        meta: {
+            enableColumnPinning,
+            enableColumnOrdering,
+            showHeaderVisibilityToggle,
+        },
         state: {
             sorting,
             columnVisibility,
+            columnPinning,
+            columnOrder,
             pagination: {
                 pageIndex: paginated.current_page - 1,
                 pageSize: perPage,
             },
         },
     });
+
+    const { registerHeader, offsets } = useColumnPinOffsets(
+        table.getPinnedVisibleLeafColumns('start').map((column) => column.id),
+        table.getPinnedVisibleLeafColumns('end').map((column) => column.id),
+    );
 
     const handleSearch = (key: string, value: string) => {
         setSearches((current) => ({ ...current, [key]: value }));
@@ -292,6 +339,40 @@ export function DataGridServer<TData extends RowData>({
                                 />
                             );
                         })}
+                        {selects.map((select) => {
+                            const applied = filters[select.key];
+                            const value = Array.isArray(applied)
+                                ? (applied[0] ?? null)
+                                : (applied ?? null);
+
+                            return (
+                                <SelectBox
+                                    key={select.key}
+                                    // `SelectBox` defaults its trigger to
+                                    // `w-full` for its form-control use case;
+                                    // here it sits beside `FacetedFilter`
+                                    // triggers, which shrink to their content,
+                                    // so it needs the same to look consistent.
+                                    className="w-auto"
+                                    options={select.options}
+                                    placeholder={select.placeholder}
+                                    clearable={select.clearable}
+                                    value={value}
+                                    onValueChange={(next) =>
+                                        visit({
+                                            // The backend filter is still
+                                            // `whereIn`-based, so a single
+                                            // pick still travels as a
+                                            // one-element array.
+                                            [select.key]: next
+                                                ? [next]
+                                                : undefined,
+                                            page: 1,
+                                        })
+                                    }
+                                />
+                            );
+                        })}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                         {showVisibilityToggle && (
@@ -311,7 +392,16 @@ export function DataGridServer<TData extends RowData>({
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id}>
+                                    <TableHead
+                                        key={header.id}
+                                        ref={registerHeader(header.column.id)}
+                                        {...getPinnedCellProps(
+                                            header.column.getIsPinned(),
+                                            offsets,
+                                            header.column.id,
+                                            { isHeader: true },
+                                        )}
+                                    >
                                         {header.isPlaceholder ? null : (
                                             <table.FlexRender header={header} />
                                         )}
@@ -334,9 +424,16 @@ export function DataGridServer<TData extends RowData>({
                             </TableRow>
                         ) : table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
-                                <TableRow key={row.id}>
+                                <TableRow key={row.id} className="group/row">
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
+                                        <TableCell
+                                            key={cell.id}
+                                            {...getPinnedCellProps(
+                                                cell.column.getIsPinned(),
+                                                offsets,
+                                                cell.column.id,
+                                            )}
+                                        >
                                             <table.FlexRender cell={cell} />
                                         </TableCell>
                                     ))}

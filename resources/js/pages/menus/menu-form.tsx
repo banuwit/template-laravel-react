@@ -152,9 +152,7 @@ export default function MenuForm({
                                     defaultValue={record?.route_pattern ?? ''}
                                     placeholder="dashboard*"
                                     aria-invalid={
-                                        errors.route_pattern
-                                            ? true
-                                            : undefined
+                                        errors.route_pattern ? true : undefined
                                     }
                                 />
                                 <FieldError>{errors.route_pattern}</FieldError>

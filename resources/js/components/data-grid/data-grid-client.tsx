@@ -2,6 +2,8 @@ import { useTable } from '@tanstack/react-table';
 import type {
     ColumnDef,
     ColumnFiltersState,
+    ColumnOrderState,
+    ColumnPinningState,
     ColumnVisibilityState,
     PaginationState,
     RowData,
@@ -25,6 +27,7 @@ import { features } from './data-grid-features';
 import type { DataGridFeatures } from './data-grid-features';
 import { DataGridPaginationAdvance } from './data-grid-pagination-advance';
 import { DataGridPaginationSimple } from './data-grid-pagination-simple';
+import { getPinnedCellProps, useColumnPinOffsets } from './data-grid-pinning';
 import { DataGridSearchInput } from './data-grid-search-input';
 import { DataGridVisibilityToggle } from './data-grid-visibility-toggle';
 import type { ToolbarConfig } from './types';
@@ -37,13 +40,30 @@ export interface DataGridClientProps<TData extends RowData> {
     defaultSorting?: SortingState;
     /** Extra buttons rendered to the right of the visibility toggle. */
     actions?: React.ReactNode;
-    /** Hide the column visibility toggle. Default: true. */
+    /** Hide the toolbar's column visibility toggle. Default: true. */
     showVisibilityToggle?: boolean;
     /**
-     * Default for `DataGridHeaderDropdown`'s per-column `showVisibilityToggle`
-     * prop across every column that doesn't set its own. Default: true.
+     * Show the "View columns" submenu inside every `DataGridHeaderDropdown`.
+     * Default: true. A column can still override it per header.
      */
     showHeaderVisibilityToggle?: boolean;
+    /**
+     * Add "Pin to left" / "Pin to right" to the header dropdown and make
+     * pinned columns sticky while the grid scrolls sideways. Default: false.
+     */
+    enableColumnPinning?: boolean;
+    /**
+     * Add "Move to left" / "Move to right" to the header dropdown.
+     * Default: false.
+     */
+    enableColumnOrdering?: boolean;
+    /**
+     * Columns pinned on first render, e.g. `{ start: [], end: ['actions'] }`.
+     * Use this for label-only headers, which have no dropdown to pin from.
+     */
+    defaultColumnPinning?: ColumnPinningState;
+    /** Column ids in their initial order. Defaults to the column def order. */
+    defaultColumnOrder?: ColumnOrderState;
     /**
      * Stable row id, e.g. `(row) => String(row.id)`. Without this, TanStack
      * falls back to the row's index as its id — after a delete, sort, or
@@ -68,6 +88,10 @@ export function DataGridClient<TData extends RowData>({
     actions,
     showVisibilityToggle = true,
     showHeaderVisibilityToggle = true,
+    enableColumnPinning = false,
+    enableColumnOrdering = false,
+    defaultColumnPinning,
+    defaultColumnOrder,
     getRowId,
     emptyTitle,
     emptyDescription,
@@ -84,6 +108,13 @@ export function DataGridClient<TData extends RowData>({
         React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] =
         React.useState<ColumnVisibilityState>({});
+    const [columnPinning, setColumnPinning] =
+        React.useState<ColumnPinningState>(
+            () => defaultColumnPinning ?? { start: [], end: [] },
+        );
+    const [columnOrder, setColumnOrder] = React.useState<ColumnOrderState>(
+        () => defaultColumnOrder ?? [],
+    );
     const [paginationState, setPaginationState] =
         React.useState<PaginationState>({
             pageIndex: 0,
@@ -94,20 +125,34 @@ export function DataGridClient<TData extends RowData>({
         features,
         data,
         columns,
-        meta: { showHeaderVisibilityToggle },
         getRowId,
         enableSortingRemoval: false,
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
         onColumnVisibilityChange: setColumnVisibility,
+        onColumnPinningChange: setColumnPinning,
+        onColumnOrderChange: setColumnOrder,
         onPaginationChange: setPaginationState,
+        enableColumnPinning,
+        meta: {
+            enableColumnPinning,
+            enableColumnOrdering,
+            showHeaderVisibilityToggle,
+        },
         state: {
             sorting,
             columnFilters,
             columnVisibility,
+            columnPinning,
+            columnOrder,
             pagination: paginationState,
         },
     });
+
+    const { registerHeader, offsets } = useColumnPinOffsets(
+        table.getPinnedVisibleLeafColumns('start').map((column) => column.id),
+        table.getPinnedVisibleLeafColumns('end').map((column) => column.id),
+    );
 
     const resetPage = () => {
         setPaginationState((current) => ({ ...current, pageIndex: 0 }));
@@ -191,7 +236,16 @@ export function DataGridClient<TData extends RowData>({
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id}>
+                                    <TableHead
+                                        key={header.id}
+                                        ref={registerHeader(header.column.id)}
+                                        {...getPinnedCellProps(
+                                            header.column.getIsPinned(),
+                                            offsets,
+                                            header.column.id,
+                                            { isHeader: true },
+                                        )}
+                                    >
                                         {header.isPlaceholder ? null : (
                                             <table.FlexRender header={header} />
                                         )}
@@ -205,12 +259,20 @@ export function DataGridClient<TData extends RowData>({
                             rows.map((row) => (
                                 <TableRow
                                     key={row.id}
+                                    className="group/row"
                                     data-state={
                                         row.getIsSelected() && 'selected'
                                     }
                                 >
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
+                                        <TableCell
+                                            key={cell.id}
+                                            {...getPinnedCellProps(
+                                                cell.column.getIsPinned(),
+                                                offsets,
+                                                cell.column.id,
+                                            )}
+                                        >
                                             <table.FlexRender cell={cell} />
                                         </TableCell>
                                     ))}

@@ -5,7 +5,7 @@ import type {
     RowData,
     Table,
 } from '@tanstack/react-table';
-import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronsUpDown, Pin, PinOff } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
+import { DataGridColumnActions } from './data-grid-column-actions';
 import type { DataGridFeatures } from './data-grid-features';
 import { DataGridVisibilityHeader } from './data-grid-visibility-header';
 import { getSorted } from './types';
@@ -35,15 +36,15 @@ interface DataGridHeaderDropdownProps<
     onSortChange?: (desc: boolean) => void;
     /**
      * Show the "View columns" submenu (column visibility toggle) inside this
-     * column's dropdown. Requires `table` when enabled — pass `false` to
-     * render a plain sort-only dropdown without `table` / `columnVisibility`.
-     *
-     * Defaults to `table.options.meta.showHeaderVisibilityToggle` (set by
-     * `DataGridClient` / `DataGridServer`'s own `showHeaderVisibilityToggle`
-     * prop), or `true` when that isn't set either — so a page can turn this
-     * off for every column at once instead of passing it per column.
+     * column's dropdown. Overrides the grid's `showHeaderVisibilityToggle`.
      */
     showVisibilityToggle?: boolean;
+    /**
+     * Show the pin / move items. Overrides the grid's `enableColumnPinning`
+     * and `enableColumnOrdering`.
+     */
+    showColumnActions?: boolean;
+    /** Defaults to `column.table`; only pass this to target another table. */
     table?: Table<DataGridFeatures, TData>;
     columnVisibility?: ColumnVisibilityState;
 }
@@ -54,18 +55,26 @@ export function DataGridHeaderDropdown<TData extends RowData, TValue>({
     sorted,
     onSortChange,
     showVisibilityToggle,
-    table,
+    showColumnActions,
+    table = column.table,
     columnVisibility,
     className,
 }: DataGridHeaderDropdownProps<TData, TValue>) {
-    if (!column.getCanSort()) {
+    const meta = table.options.meta ?? {};
+    const canSort = column.getCanSort();
+    const showVisibility =
+        showVisibilityToggle ?? meta.showHeaderVisibilityToggle ?? true;
+    const allowColumnActions = showColumnActions ?? true;
+    const enablePinning =
+        allowColumnActions && (meta.enableColumnPinning ?? false);
+    const enableOrdering =
+        allowColumnActions && (meta.enableColumnOrdering ?? false);
+    const hasColumnActions = enablePinning || enableOrdering;
+
+    // Nothing to put in a menu — fall back to a plain label.
+    if (!canSort && !hasColumnActions && !showVisibility) {
         return <div className={cn(className)}>{title}</div>;
     }
-
-    const resolvedShowVisibilityToggle =
-        showVisibilityToggle ??
-        table?.options.meta?.showHeaderVisibilityToggle ??
-        true;
 
     const sort = (desc: boolean) => {
         if (onSortChange) {
@@ -75,82 +84,140 @@ export function DataGridHeaderDropdown<TData extends RowData, TValue>({
         }
     };
 
-    const renderMenu = (current: false | 'asc' | 'desc') => (
-        <div className={cn('flex items-center gap-2', className)}>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+    const renderMenu = (
+        current: false | 'asc' | 'desc',
+        pinned: false | 'start' | 'end',
+    ) => {
+        const showPinIndicator = enablePinning && pinned;
+
+        return (
+            <div
+                className={cn(
+                    'flex h-8 items-center gap-2',
+                    showPinIndicator && 'justify-between',
+                    className,
+                )}
+            >
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            aria-sort={
+                                current === 'desc'
+                                    ? 'descending'
+                                    : current === 'asc'
+                                      ? 'ascending'
+                                      : undefined
+                            }
+                            className={cn(
+                                '-ml-3 h-8 data-[state=open]:bg-accent',
+                                current
+                                    ? 'font-bold'
+                                    : 'font-medium',
+                            )}
+                        >
+                            <span>{title}</span>
+                            {current === 'desc' ? (
+                                <ArrowDown
+                                    data-icon="inline-end"
+                                    className="text-primary"
+                                />
+                            ) : current === 'asc' ? (
+                                <ArrowUp
+                                    data-icon="inline-end"
+                                    className="text-primary"
+                                />
+                            ) : canSort ? (
+                                <ChevronsUpDown
+                                    data-icon="inline-end"
+                                    className="opacity-40"
+                                />
+                            ) : null}
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                        align="start"
+                        onCloseAutoFocus={(event) => event.preventDefault()}
+                        className="bg-white w-40"
+                    >
+                        {canSort && (
+                            <>
+                                <DropdownMenuItem onClick={() => sort(false)}>
+                                    <ArrowUp />
+                                    Asc
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => sort(true)}>
+                                    <ArrowDown />
+                                    Desc
+                                </DropdownMenuItem>
+                            </>
+                        )}
+                        {hasColumnActions && (
+                            <>
+                                {canSort && <DropdownMenuSeparator />}
+                                <DataGridColumnActions
+                                    column={column}
+                                    pinned={pinned}
+                                    enablePinning={enablePinning}
+                                    enableOrdering={enableOrdering}
+                                />
+                            </>
+                        )}
+                        {showVisibility && (
+                            <>
+                                {(canSort || hasColumnActions) && (
+                                    <DropdownMenuSeparator />
+                                )}
+                                <DataGridVisibilityHeader
+                                    table={table}
+                                    columnVisibility={columnVisibility}
+                                />
+                            </>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                {showPinIndicator && (
                     <Button
                         variant="ghost"
-                        size="sm"
-                        aria-sort={
-                            current === 'desc'
-                                ? 'descending'
-                                : current === 'asc'
-                                  ? 'ascending'
-                                  : undefined
-                        }
-                        className={cn(
-                            '-ml-3 h-8 data-[state=open]:bg-accent',
-                            current
-                                ? 'font-semibold text-foreground'
-                                : 'font-normal text-muted-foreground',
-                        )}
+                        size="icon-xs"
+                        aria-label={`Unpin ${title}`}
+                        title={`Unpin ${title}`}
+                        onClick={() => column.pin(false)}
+                        className="group/pin -mr-1 shrink-0 text-primary hover:text-destructive/70"
                     >
-                        <span>{title}</span>
-                        {current === 'desc' ? (
-                            <ArrowDown
-                                data-icon="inline-end"
-                                className="text-primary"
-                            />
-                        ) : current === 'asc' ? (
-                            <ArrowUp
-                                data-icon="inline-end"
-                                className="text-primary"
-                            />
-                        ) : (
-                            <ChevronsUpDown
-                                data-icon="inline-end"
-                                className="opacity-40"
-                            />
-                        )}
+                        <Pin className="fill-current group-hover/pin:hidden" />
+                        <PinOff className="hidden group-hover/pin:block" />
                     </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                    align="start"
-                    onCloseAutoFocus={(event) => event.preventDefault()}
-                >
-                    <DropdownMenuItem onClick={() => sort(false)}>
-                        <ArrowUp />
-                        Asc
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => sort(true)}>
-                        <ArrowDown />
-                        Desc
-                    </DropdownMenuItem>
-                    {resolvedShowVisibilityToggle && table && (
-                        <>
-                            <DropdownMenuSeparator />
-                            <DataGridVisibilityHeader
-                                table={table}
-                                columnVisibility={columnVisibility ?? {}}
-                            />
-                        </>
-                    )}
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </div>
-    );
-
-    if (sorted !== undefined) {
-        return renderMenu(sorted);
-    }
+                )}
+            </div>
+        );
+    };
 
     return (
         <Subscribe
             source={column.table.store}
-            selector={(state) => getSorted(state.sorting, column.id)}
+            selector={(state) => ({
+                // Reading these as primitives keeps `Subscribe`'s shallow
+                // compare from re-rendering on every unrelated state write.
+                sorted: sorted ?? getSorted(state.sorting, column.id),
+                pinned: state.columnPinning.start.includes(column.id)
+                    ? ('start' as const)
+                    : state.columnPinning.end.includes(column.id)
+                      ? ('end' as const)
+                      : (false as const),
+                // The order itself is not rendered, but "move" enable/disable
+                // and neighbour lookups derive from it.
+                order: state.columnOrder.join(','),
+                hidden: Object.entries(state.columnVisibility)
+                    .filter(([, visible]) => !visible)
+                    .map(([id]) => id)
+                    .join(','),
+            })}
         >
-            {(storeSorted) => renderMenu(storeSorted)}
+            {({ sorted: storeSorted, pinned }) =>
+                renderMenu(storeSorted, pinned)
+            }
         </Subscribe>
     );
 }

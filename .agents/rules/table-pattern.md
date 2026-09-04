@@ -27,7 +27,7 @@ Sebelum menulis satu baris kode tabel, tanyakan kelimanya sekaligus. Lewati pert
 
 | Opsi           | Fondasi                        | Pakai kalau                                                                                                                                          |
 | -------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **data-grid**  | TanStack Table v9              | Butuh column visibility toggle, header dropdown, atau nanti mau virtualisasi / column resizing / row selection. Konsisten dengan project React lain. |
+| **data-grid**  | TanStack Table v9              | Butuh column visibility toggle, header dropdown, pin kolom (sticky) / reorder kolom, atau nanti mau virtualisasi / column resizing / row selection. Konsisten dengan project React lain. |
 | **data-table** | Primitive shadcn `Table` murni | List biasa. Tidak menyeret TanStack, bundle lebih kecil, sel lebih gampang dikustomisasi, kode lebih mudah dibaca.                                   |
 
 Kalau user tidak punya preferensi kuat, **sarankan `data-table`** — lebih sederhana untuk mayoritas halaman list. Naikkan ke `data-grid` hanya kalau salah satu fitur khas TanStack di atas benar-benar dibutuhkan.
@@ -70,6 +70,42 @@ Submenu visibility kolom di dalam **Header dropdown** (`data-grid` saja) bisa di
 
 `DataGridHeaderDropdown` juga menerima `showVisibilityToggle` sendiri per kolom (menang atas nilai halaman) untuk kasus campuran — mis. semua kolom disembunyikan submenu-nya kecuali satu.
 
+#### Pin & reorder kolom (`data-grid` saja, opt-in)
+
+`DataGridHeaderDropdown` bisa menambah empat item lagi di menunya — **Pin to left**, **Pin to right**, **Move to left**, **Move to right** — plus **Unpin** saat kolomnya sedang di-pin. Kolom yang di-pin jadi **sticky**: ia diam di tepi kiri/kanan sementara kolom lain lewat di belakangnya saat tabel di-scroll horizontal.
+
+Keduanya **mati secara default**; nyalakan per halaman:
+
+```tsx
+<DataGridServer
+    columns={columns}
+    paginated={{prop}}
+    filters={filters}
+    url={{resources}Index.url()}
+    enableColumnPinning
+    enableColumnOrdering
+    defaultColumnPinning={{ start: [], end: ['actions'] }}
+/>
+```
+
+| Prop                   | Isi                                                                                    |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| `enableColumnPinning`  | Menampilkan item Pin/Unpin dan mengaktifkan sticky. Default `false`.                    |
+| `enableColumnOrdering` | Menampilkan item Move to left / Move to right. Default `false`.                         |
+| `defaultColumnPinning` | Kolom yang sudah ter-pin saat render pertama, bentuknya `{ start: [...], end: [...] }`. |
+| `defaultColumnOrder`   | Urutan awal (array `id` kolom). Default mengikuti urutan definisi kolom.                |
+
+Per kolom, `DataGridHeaderDropdown` menerima `showColumnActions={false}` untuk menyembunyikan grup Pin/Move di kolom itu saja (menang atas nilai halaman), sama polanya dengan `showVisibilityToggle`.
+
+Yang perlu diingat:
+
+- **State-nya tidak persisten.** Pin dan urutan hidup di `useState`, sama seperti `columnVisibility` — reload halaman mengembalikannya ke default. Jangan tambahkan localStorage tanpa diminta.
+- **Kolom label-only (`DataGridHeader`) tidak punya menu**, jadi kolom `no` dan `actions` tidak bisa di-pin dari UI. Pin awalnya lewat `defaultColumnPinning`, mis. `{ start: [], end: ['actions'] }` untuk menempelkan kolom aksi di kanan.
+- **Move bergerak di dalam region-nya sendiri.** Kolom start-pinned hanya bertukar dengan sesama start-pinned, begitu juga end-pinned dan yang tidak di-pin — jadi "move to left" tidak pernah diam-diam melepas pin. Itu sebabnya itemnya ter-disable saat kolom sudah di tepi region-nya, bukan saat di tepi tabel.
+- **Lebar kolom tetap otomatis.** Offset sticky diukur runtime dengan `ResizeObserver` di `data-grid-pinning.ts` — sengaja **tidak** memakai `columnSizingFeature`/`column.getSize()`, yang akan memaksa tiap kolom pinned ke lebar `size` (default 150) dan membuatnya melompat begitu di-pin. Jangan "perbaiki" ini dengan mendaftarkan `columnSizingFeature`.
+- **Sel yang di-pin wajib punya background opaque**, kalau tidak kolom yang lewat di belakangnya menembus. Karena itu sel pinned mengulang state hover/selected baris lewat `group/row` — jangan hapus class `group/row` di `<TableRow>` kedua grid.
+- **`data-table` tidak punya fitur ini.** Kalau user butuh pin atau reorder kolom, itu alasan sah untuk memilih `data-grid` (lihat Langkah 0 nomor 1).
+
 ### 3. Pagination seperti apa?
 
 Kedua paket punya prop `pagination` yang sama bentuknya di `Client` **dan** `Server` — pilihan ini murni di sisi pemanggilan, tidak perlu mengedit kolom, dan berlaku juga saat query/tabelnya memang tidak dipaginasi:
@@ -89,12 +125,15 @@ Kedua paket punya prop `pagination` yang sama bentuknya di `Client` **dan** `Ser
 
 ### 4. Filter apa yang dibutuhkan?
 
-| Kebutuhan                               | Cara                                                                                 |
-| --------------------------------------- | ------------------------------------------------------------------------------------ |
-| Tidak ada                               | Jangan kirim prop `toolbar`                                                          |
-| Search box                              | `toolbar={{ searches: [{ key, placeholder }] }}`                                     |
-| Filter pilihan (status, role, kategori) | `toolbar={{ facets: [{ key, title, options }] }}` → dirender sebagai `FacetedFilter` |
-| Keduanya                                | Kirim `searches` dan `facets` sekaligus                                              |
+| Kebutuhan                                     | Cara                                                                                                                                                          |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tidak ada                                     | Jangan kirim prop `toolbar`                                                                                                                                  |
+| Search box                                    | `toolbar={{ searches: [{ key, placeholder }] }}`                                                                                                             |
+| Filter multi-pilihan, ada Apply/Reset         | `toolbar={{ facets: [{ key, title, options }] }}` → dirender sebagai `FacetedFilter`                                                                        |
+| Filter satu-pilihan, langsung berlaku diklik  | `toolbar={{ selects: [{ key, placeholder, options }] }}` → dirender sebagai `SelectBox` (**`DataGridServer` saja** — `DataGridClient` belum punya `selects`) |
+| Kombinasi apa pun                             | Kirim `searches`, `facets`, dan/atau `selects` sekaligus                                                                                                     |
+
+`selects` tetap mengirim nilainya sebagai array satu elemen (`key[]=value`) ke backend, persis seperti `facets` — jadi filter `whereIn` yang sudah ada di controller tidak perlu diubah sama sekali saat pindah dari multi- ke single-select di UI. Field `SelectConfig`: `key`, `placeholder?`, `options` (`SelectOption[]`), `clearable?`.
 
 Detail pilihan komponen filter (kapan `FacetedFilter`, kapan `SelectBox`) ada di **`filter-pattern.md`**. Tanyakan itu juga kalau user butuh filter.
 
@@ -351,3 +390,5 @@ Kalau menambah kolom yang perlu filter facet, daftarkan `filterFn: 'multiValue'`
 - **Jangan pasang TanStack langsung di halaman.** Kalau butuh TanStack, lewat `@/components/data-grid`. Kalau tidak, pakai `data-table`.
 - **Jangan bikin komponen pagination / search / sort header baru.** Semuanya sudah ada di kedua paket dan bisa dipakai lepas dari `Client`/`Server` (mis. `DataTableHeaderSort` di tabel yang ditulis tangan).
 - **`AlertDialog` delete di dalam `DropdownMenuContent` tidak pernah muncul.** Radix unmount konten dropdown begitu sebuah item dipilih, ikut membawa turun `AlertDialog` sebelum sempat tampil. Lihat solusinya (state `open` diangkat + render sibling + `setTimeout` di `onSelect`) di bagian **5. Kolom actions seperti apa? → Template: Dropdown** di atas.
+- **Selalu kirim `getRowId` ke `DataGridClient` / `DataGridServer` kalau baris punya id stabil**, mis. `getRowId={(record) => String(record.id)}`. Tanpa itu TanStack memakai index baris sebagai row id — setelah delete, sort, atau ganti halaman, index yang sama ditempati record lain, dan React menganggapnya komponen yang sama alih-alih unmount/remount. Akibatnya state lokal per baris (menu dropdown terbuka, `AlertDialog` konfirmasi delete) ikut "menempel" ke baris berikutnya alih-alih reset — gejalanya persis seperti "`AlertDialog` delete masih muncul setelah dihapus" padahal row action-nya sudah benar.
+- **Kolom sortable di frontend wajib di-whitelist juga di backend.** Menambah kolom baru dengan `DataGridHeaderSort` / `DataGridHeaderDropdown` (atau `sortable: true` di `data-table`) tanpa menambahkan nama kolomnya ke rule `sort` => `in:...` di `Index{Model}Request` (dan ke daftar allow-list di method `sort()`-nya) membuat klik Asc/Desc pada kolom itu terlihat tidak berfungsi: request `?sort={kolom}` gagal validasi, redirect balik membuang parameter itu tanpa pesan error yang terlihat di UI. Setiap kali menambah kolom sortable baru, cek dulu whitelist `sort` di Form Request index-nya.

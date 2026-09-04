@@ -49,8 +49,8 @@ function SortButton({
                 className={cn(
                     '-ml-3 h-8',
                     sorted
-                        ? 'font-semibold text-foreground'
-                        : 'font-normal text-muted-foreground',
+                        ? 'font-bold'
+                        : 'font-medium',
                 )}
                 onClick={onClick}
             >

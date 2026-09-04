@@ -153,12 +153,8 @@ export default function MenuSheets({
             >
                 {sheet.type === 'view' && (
                     <dl className="flex flex-col gap-3">
-                        <DetailRow label="Name">
-                            {sheet.record.name}
-                        </DetailRow>
-                        <DetailRow label="Slug">
-                            {sheet.record.slug}
-                        </DetailRow>
+                        <DetailRow label="Name">{sheet.record.name}</DetailRow>
+                        <DetailRow label="Slug">{sheet.record.slug}</DetailRow>
                         <DetailRow label="Parent">
                             {sheet.record.parent_name ?? '—'}
                         </DetailRow>
@@ -187,9 +183,7 @@ export default function MenuSheets({
                                         : 'secondary'
                                 }
                             >
-                                {sheet.record.is_active
-                                    ? 'Active'
-                                    : 'Inactive'}
+                                {sheet.record.is_active ? 'Active' : 'Inactive'}
                             </Badge>
                         </DetailRow>
                     </dl>

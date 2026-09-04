@@ -5,7 +5,7 @@ import { Eye, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import * as React from 'react';
 import type { DataGridFeatures } from '@/components/data-grid/data-grid-features';
 import { DataGridHeader } from '@/components/data-grid/data-grid-header';
-import { DataGridHeaderSort } from '@/components/data-grid/data-grid-header-sort';
+import { DataGridHeaderDropdown } from '@/components/data-grid/data-grid-header-dropdown';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -144,21 +144,22 @@ export const userColumns = columnHelper.columns([
     }),
     columnHelper.accessor('name', {
         header: ({ column }) => (
-            <DataGridHeaderSort column={column} title="Name" />
+            <DataGridHeaderDropdown column={column} title="Name" />
         ),
         cell: ({ row }) => <NameCell user={row.original} />,
     }),
     columnHelper.accessor('email', {
         header: ({ column }) => (
-            <DataGridHeaderSort column={column} title="Email" />
+            <DataGridHeaderDropdown column={column} title="Email" />
         ),
         cell: ({ row }) => (
             <span className="text-muted-foreground">{row.original.email}</span>
         ),
     }),
     columnHelper.accessor('phone', {
-        header: () => <DataGridHeader title="Phone" />,
-        enableSorting: false,
+        header: ({ column }) => (
+            <DataGridHeaderDropdown column={column} title="Phone" />
+        ),
         cell: ({ row }) => (
             <span className="text-muted-foreground">
                 {row.original.phone ?? '—'}
@@ -167,13 +168,17 @@ export const userColumns = columnHelper.columns([
     }),
     columnHelper.accessor('department', {
         header: ({ column }) => (
-            <DataGridHeaderSort column={column} title="Department" />
+            <DataGridHeaderDropdown column={column} title="Department" />
         ),
-        cell: ({ row }) => row.original.department ?? '—',
+        cell: ({ row }) => (
+            <span className="text-muted-foreground">
+                {row.original.department ?? '—'}
+            </span>
+        ),
     }),
     columnHelper.accessor('position', {
         header: ({ column }) => (
-            <DataGridHeaderSort column={column} title="Position" />
+            <DataGridHeaderDropdown column={column} title="Position" />
         ),
         cell: ({ row }) => (
             <span className="text-muted-foreground">
@@ -183,7 +188,7 @@ export const userColumns = columnHelper.columns([
     }),
     columnHelper.accessor('join_date', {
         header: ({ column }) => (
-            <DataGridHeaderSort column={column} title="Join date" />
+            <DataGridHeaderDropdown column={column} title="Join date" />
         ),
         cell: ({ row }) => (
             <span className="text-muted-foreground">
@@ -195,7 +200,7 @@ export const userColumns = columnHelper.columns([
     }),
     columnHelper.accessor('status', {
         header: ({ column }) => (
-            <DataGridHeaderSort column={column} title="Status" />
+            <DataGridHeaderDropdown column={column} title="Status" />
         ),
         cell: ({ row }) => (
             <Badge
@@ -208,8 +213,9 @@ export const userColumns = columnHelper.columns([
         ),
     }),
     columnHelper.accessor('gender', {
-        header: () => <DataGridHeader title="Gender" />,
-        enableSorting: false,
+        header: ({ column }) => (
+            <DataGridHeaderDropdown column={column} title="Gender" />
+        ),
         cell: ({ row }) =>
             row.original.gender ? genderLabel(row.original.gender) : '—',
     }),

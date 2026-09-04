@@ -219,7 +219,7 @@ export function SelectBox(props: SelectBoxProps) {
     const hasValue = selectedOptions.length > 0;
 
     const triggerContent = !hasValue ? (
-        <span className="truncate text-muted-foreground">{placeholder}</span>
+        <span className="truncate">{placeholder}</span>
     ) : isMulti ? (
         <span className="flex flex-wrap items-center gap-1 overflow-hidden">
             {selectedOptions.slice(0, maxChips).map((option) => (
@@ -259,7 +259,6 @@ export function SelectBox(props: SelectBoxProps) {
                         className={cn(
                             'w-full justify-between gap-2 font-normal',
                             triggerSizeClass[size],
-                            !hasValue && 'text-muted-foreground',
                             className,
                         )}
                     >
@@ -272,7 +271,7 @@ export function SelectBox(props: SelectBoxProps) {
                                     role="button"
                                     tabIndex={0}
                                     aria-label="Clear selection"
-                                    className="rounded-sm text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+                                    className="rounded-sm text-destructive focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
                                     onClick={(event) => {
                                         event.preventDefault();
                                         event.stopPropagation();
@@ -292,7 +291,7 @@ export function SelectBox(props: SelectBoxProps) {
                                     <X className="size-3.5" />
                                 </span>
                             )}
-                            <ChevronDown className="size-4 text-muted-foreground" />
+                            <ChevronDown className="size-4" />
                         </span>
                     </Button>
                 </PopoverTrigger>

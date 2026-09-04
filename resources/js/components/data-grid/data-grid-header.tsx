@@ -39,7 +39,7 @@ export function DataGridHeader({
     return (
         <div
             className={cn(
-                'flex h-8 items-center font-normal text-muted-foreground',
+                'flex h-8 items-center font-medium',
                 justifyClass[align],
                 className,
             )}

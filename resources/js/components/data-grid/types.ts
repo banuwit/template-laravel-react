@@ -3,6 +3,7 @@ import type { SortingState } from '@tanstack/react-table';
 import type {
     FilterOption,
     FilterSelectionVariant,
+    SelectOption,
 } from '@/components/filters/types';
 
 export type { Paginated } from '@/types/pagination';
@@ -33,9 +34,23 @@ export interface SearchConfig {
     placeholder: string;
 }
 
+/**
+ * A single-pick filter rendered as a `SelectBox` instead of a `FacetedFilter`
+ * — the choice applies immediately, no Apply step. The backend value still
+ * travels as a one-element array (`key[]=value`) so a `whereIn`-based filter
+ * needs no backend change to go from multi- to single-select.
+ */
+export interface SelectConfig {
+    key: string;
+    placeholder?: string;
+    options: SelectOption[];
+    clearable?: boolean;
+}
+
 export interface ToolbarConfig {
     searches?: SearchConfig[];
     facets?: FacetConfig[];
+    selects?: SelectConfig[];
 }
 
 export function getSorted(

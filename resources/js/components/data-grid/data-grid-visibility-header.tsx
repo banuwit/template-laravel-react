@@ -18,12 +18,13 @@ import { formatColumnId } from './utils';
 
 interface DataGridVisibilityHeaderProps<TData extends RowData> {
     table: Table<DataGridFeatures, TData>;
-    columnVisibility: ColumnVisibilityState;
+    /** Defaults to the table store's current visibility state. */
+    columnVisibility?: ColumnVisibilityState;
 }
 
 export function DataGridVisibilityHeader<TData extends RowData>({
     table,
-    columnVisibility,
+    columnVisibility = table.store.state.columnVisibility,
 }: DataGridVisibilityHeaderProps<TData>) {
     const columns = table
         .getAllColumns()

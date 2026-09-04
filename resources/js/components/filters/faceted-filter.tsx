@@ -222,7 +222,6 @@ export function FacetedFilter({
                 <Button
                     id={id}
                     variant="outline"
-                    size="lg"
                     disabled={disabled}
                     className={className}
                 >

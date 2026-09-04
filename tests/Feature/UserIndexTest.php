@@ -111,6 +111,25 @@ test('users can be sorted by name', function () {
         );
 });
 
+test('users can be sorted by phone', function () {
+    $user = User::factory()->create(['phone' => '555-0003']);
+
+    User::factory()->create(['phone' => '555-0001']);
+    User::factory()->create(['phone' => '555-0002']);
+
+    $this->actingAs($user)
+        ->get(route('users.index', ['sort' => 'phone', 'direction' => 'asc']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('users/index')
+            ->where('users.data.0.phone', '555-0001')
+            ->where('users.data.1.phone', '555-0002')
+            ->where('users.data.2.phone', '555-0003')
+            ->where('filters.sort', 'phone')
+            ->where('filters.direction', 'asc'),
+        );
+});
+
 test('the user list is paginated', function () {
     $user = User::factory()->create();
     User::factory()->count(10)->create();

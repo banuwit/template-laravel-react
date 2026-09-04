@@ -1,5 +1,7 @@
 import {
     columnFilteringFeature,
+    columnOrderingFeature,
+    columnPinningFeature,
     columnVisibilityFeature,
     constructFilterFn,
     createFilteredRowModel,
@@ -13,21 +15,6 @@ import {
     sortFn_text,
     tableFeatures,
 } from '@tanstack/react-table';
-
-/**
- * Type of `table.options.meta` for every data-grid instance.
- *
- * Lets `DataGridClient` / `DataGridServer` set page-wide defaults that column
- * header components read as a fallback when their own per-column prop is left
- * unset — e.g. `DataGridHeaderDropdown`'s `showVisibilityToggle`.
- */
-export interface DataGridTableMeta {
-    /**
-     * Default for `DataGridHeaderDropdown`'s `showVisibilityToggle` prop on
-     * every column that doesn't set its own. Default: true.
-     */
-    showHeaderVisibilityToggle?: boolean;
-}
 
 /**
  * Keeps rows whose column value is one of the selected facet values.
@@ -47,10 +34,27 @@ const filterFn_multiValue = constructFilterFn({
         !Array.isArray(filterValue) || filterValue.length === 0,
 });
 
+/**
+ * Page-level switches the grid puts on `table.options.meta` so header
+ * components can read them from `column.table` without every column def
+ * having to forward a prop.
+ */
+export interface DataGridMeta {
+    enableColumnPinning?: boolean;
+    enableColumnOrdering?: boolean;
+    showHeaderVisibilityToggle?: boolean;
+}
+
 // New in v9: declare the features this grid uses — anything you don't
 // register is tree-shaken out of the bundle.
 export const features = tableFeatures({
     columnFilteringFeature,
+    // `columnOrderingFeature` + `columnPinningFeature` back the Pin / Move
+    // items in the header dropdown. Sticky offsets are measured at runtime
+    // (see `data-grid-pinning.ts`), so `columnSizingFeature` is deliberately
+    // left out — it would force every pinned column to its declared `size`.
+    columnOrderingFeature,
+    columnPinningFeature,
     columnVisibilityFeature,
     rowPaginationFeature,
     rowSelectionFeature,
@@ -63,7 +67,8 @@ export const features = tableFeatures({
         multiValue: filterFn_multiValue,
     },
     sortFns: { alphanumeric: sortFn_alphanumeric, text: sortFn_text },
-    tableMeta: {} as DataGridTableMeta,
+    // Type-only slot: gives `table.options.meta` the shape above.
+    tableMeta: {} as DataGridMeta,
 });
 
 // Pass this as the first generic argument to `ColumnDef`, `Column`, `Table`,

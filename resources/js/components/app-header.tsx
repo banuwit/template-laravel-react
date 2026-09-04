@@ -1,21 +1,15 @@
 import { Link, usePage } from '@inertiajs/react';
-import {
-    BookOpen,
-    Building2,
-    Folder,
-    Globe,
-    LayoutGrid,
-    ListTree,
-    Map,
-    Menu,
-    Search,
-    SlidersHorizontal,
-    Users,
-} from 'lucide-react';
+import { BookOpen, ChevronRight, Folder, Menu, Search } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
+import { mainNavItems } from '@/components/app-nav-items';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -23,8 +17,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
     NavigationMenu,
+    NavigationMenuContent,
     NavigationMenuItem,
+    NavigationMenuLink,
     NavigationMenuList,
+    NavigationMenuTrigger,
     navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
 import {
@@ -44,51 +41,7 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useInitials } from '@/hooks/use-initials';
 import { cn, toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
-import { index as cities } from '@/routes/cities';
-import { index as countries } from '@/routes/countries';
-import { index as menus } from '@/routes/menus';
-import { index as parameters } from '@/routes/parameters';
-import { index as provinces } from '@/routes/provinces';
-import { index as users } from '@/routes/users';
 import type { NavItem } from '@/types';
-
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Users',
-        href: users(),
-        icon: Users,
-    },
-    {
-        title: 'Parameters',
-        href: parameters(),
-        icon: SlidersHorizontal,
-    },
-    {
-        title: 'Countries',
-        href: countries(),
-        icon: Globe,
-    },
-    {
-        title: 'Provinces',
-        href: provinces(),
-        icon: Map,
-    },
-    {
-        title: 'Cities',
-        href: cities(),
-        icon: Building2,
-    },
-    {
-        title: 'Menus',
-        href: menus(),
-        icon: ListTree,
-    },
-];
 
 const rightNavItems: NavItem[] = [
     {
@@ -106,6 +59,72 @@ const rightNavItems: NavItem[] = [
 const activeItemStyles =
     'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
 
+function isNavItemActive(
+    item: NavItem,
+    isCurrentUrl: (href: NonNullable<NavItem['href']>) => boolean,
+): boolean {
+    if (item.href && isCurrentUrl(item.href)) {
+        return true;
+    }
+
+    return (
+        item.items?.some(
+            (subItem) =>
+                subItem.href !== undefined && isCurrentUrl(subItem.href),
+        ) ?? false
+    );
+}
+
+function MobileNavItem({ item }: { item: NavItem }) {
+    const { isCurrentUrl } = useCurrentUrl();
+    const childItems = item.items ?? [];
+    const isChildActive = childItems.some(
+        (subItem) => subItem.href !== undefined && isCurrentUrl(subItem.href),
+    );
+
+    if (childItems.length > 0) {
+        return (
+            <Collapsible
+                key={isChildActive ? 'active' : 'inactive'}
+                defaultOpen={isChildActive}
+                className="group/collapsible flex flex-col gap-2"
+            >
+                <CollapsibleTrigger className="flex items-center gap-2 font-medium">
+                    {item.icon && <item.icon className="size-5" />}
+                    <span>{item.title}</span>
+                    <ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                    <div className="flex flex-col gap-2 pl-7">
+                        {childItems.map((subItem) =>
+                            subItem.href ? (
+                                <Link
+                                    key={subItem.title}
+                                    href={subItem.href}
+                                    className="font-medium"
+                                >
+                                    {subItem.title}
+                                </Link>
+                            ) : null,
+                        )}
+                    </div>
+                </CollapsibleContent>
+            </Collapsible>
+        );
+    }
+
+    if (!item.href) {
+        return null;
+    }
+
+    return (
+        <Link href={item.href} className="flex items-center gap-2 font-medium">
+            {item.icon && <item.icon className="size-5" />}
+            <span>{item.title}</span>
+        </Link>
+    );
+}
+
 export function AppHeader() {
     const page = usePage();
     const { auth } = page.props;
@@ -116,7 +135,6 @@ export function AppHeader() {
         <>
             <div className="border-b border-sidebar-border/80">
                 <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
-                    {/* Mobile Menu */}
                     <div className="lg:hidden">
                         <Sheet>
                             <SheetTrigger asChild>
@@ -138,34 +156,32 @@ export function AppHeader() {
                                 <SheetHeader className="flex justify-start text-left">
                                     <AppLogoIcon className="h-6 w-6 fill-current text-black dark:text-white" />
                                 </SheetHeader>
-                                <div className="flex h-full flex-1 flex-col space-y-4 p-4">
+                                <div className="flex h-full flex-1 flex-col gap-4 p-4">
                                     <div className="flex h-full flex-col justify-between text-sm">
-                                        <div className="flex flex-col space-y-4">
+                                        <div className="flex flex-col gap-4">
                                             {mainNavItems.map((item) => (
-                                                <Link
+                                                <MobileNavItem
                                                     key={item.title}
-                                                    href={item.href}
-                                                    className="flex items-center space-x-2 font-medium"
-                                                >
-                                                    {item.icon && (
-                                                        <item.icon className="h-5 w-5" />
-                                                    )}
-                                                    <span>{item.title}</span>
-                                                </Link>
+                                                    item={item}
+                                                />
                                             ))}
                                         </div>
 
-                                        <div className="flex flex-col space-y-4">
+                                        <div className="flex flex-col gap-4">
                                             {rightNavItems.map((item) => (
                                                 <a
                                                     key={item.title}
-                                                    href={toUrl(item.href)}
+                                                    href={
+                                                        item.href
+                                                            ? toUrl(item.href)
+                                                            : undefined
+                                                    }
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="flex items-center space-x-2 font-medium"
+                                                    className="flex items-center gap-2 font-medium"
                                                 >
                                                     {item.icon && (
-                                                        <item.icon className="h-5 w-5" />
+                                                        <item.icon className="size-5" />
                                                     )}
                                                     <span>{item.title}</span>
                                                 </a>
@@ -180,47 +196,112 @@ export function AppHeader() {
                     <Link
                         href={dashboard()}
                         prefetch
-                        className="flex items-center space-x-2"
+                        className="flex items-center gap-2"
                     >
                         <AppLogo />
                     </Link>
 
-                    {/* Desktop Navigation */}
-                    <div className="ml-6 hidden h-full items-center space-x-6 lg:flex">
+                    <div className="ml-6 hidden h-full items-center gap-6 lg:flex">
                         <NavigationMenu className="flex h-full items-stretch">
-                            <NavigationMenuList className="flex h-full items-stretch space-x-2">
-                                {mainNavItems.map((item, index) => (
-                                    <NavigationMenuItem
-                                        key={index}
-                                        className="relative flex h-full items-center"
-                                    >
-                                        <Link
-                                            href={item.href}
-                                            className={cn(
-                                                navigationMenuTriggerStyle(),
-                                                whenCurrentUrl(
-                                                    item.href,
-                                                    activeItemStyles,
-                                                ),
-                                                'h-9 cursor-pointer px-3',
-                                            )}
+                            <NavigationMenuList className="flex h-full items-stretch gap-2">
+                                {mainNavItems.map((item) =>
+                                    item.items && item.items.length > 0 ? (
+                                        <NavigationMenuItem
+                                            key={item.title}
+                                            className="relative flex h-full items-center"
                                         >
-                                            {item.icon && (
-                                                <item.icon className="mr-2 h-4 w-4" />
+                                            <NavigationMenuTrigger
+                                                className={cn(
+                                                    navigationMenuTriggerStyle(),
+                                                    isNavItemActive(
+                                                        item,
+                                                        isCurrentUrl,
+                                                    ) && activeItemStyles,
+                                                    'h-9 cursor-pointer px-3',
+                                                )}
+                                            >
+                                                {item.icon && (
+                                                    <item.icon className="mr-2 size-4" />
+                                                )}
+                                                {item.title}
+                                            </NavigationMenuTrigger>
+                                            <NavigationMenuContent>
+                                                <ul className="flex min-w-40 flex-col gap-1 p-1">
+                                                    {item.items.map(
+                                                        (subItem) =>
+                                                            subItem.href ? (
+                                                                <li
+                                                                    key={
+                                                                        subItem.title
+                                                                    }
+                                                                >
+                                                                    <NavigationMenuLink
+                                                                        asChild
+                                                                    >
+                                                                        <Link
+                                                                            href={
+                                                                                subItem.href
+                                                                            }
+                                                                            className={cn(
+                                                                                whenCurrentUrl(
+                                                                                    subItem.href,
+                                                                                    activeItemStyles,
+                                                                                ),
+                                                                            )}
+                                                                        >
+                                                                            {subItem.icon && (
+                                                                                <subItem.icon />
+                                                                            )}
+                                                                            {
+                                                                                subItem.title
+                                                                            }
+                                                                        </Link>
+                                                                    </NavigationMenuLink>
+                                                                </li>
+                                                            ) : null,
+                                                    )}
+                                                </ul>
+                                            </NavigationMenuContent>
+                                            {isNavItemActive(
+                                                item,
+                                                isCurrentUrl,
+                                            ) && (
+                                                <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
                                             )}
-                                            {item.title}
-                                        </Link>
-                                        {isCurrentUrl(item.href) && (
-                                            <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
-                                        )}
-                                    </NavigationMenuItem>
-                                ))}
+                                        </NavigationMenuItem>
+                                    ) : item.href ? (
+                                        <NavigationMenuItem
+                                            key={item.title}
+                                            className="relative flex h-full items-center"
+                                        >
+                                            <Link
+                                                href={item.href}
+                                                className={cn(
+                                                    navigationMenuTriggerStyle(),
+                                                    whenCurrentUrl(
+                                                        item.href,
+                                                        activeItemStyles,
+                                                    ),
+                                                    'h-9 cursor-pointer px-3',
+                                                )}
+                                            >
+                                                {item.icon && (
+                                                    <item.icon className="mr-2 size-4" />
+                                                )}
+                                                {item.title}
+                                            </Link>
+                                            {isCurrentUrl(item.href) && (
+                                                <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
+                                            )}
+                                        </NavigationMenuItem>
+                                    ) : null,
+                                )}
                             </NavigationMenuList>
                         </NavigationMenu>
                     </div>
 
-                    <div className="ml-auto flex items-center space-x-2">
-                        <div className="relative flex items-center space-x-1">
+                    <div className="ml-auto flex items-center gap-2">
+                        <div className="relative flex items-center gap-1">
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -233,10 +314,14 @@ export function AppHeader() {
                                     <Tooltip key={item.title}>
                                         <TooltipTrigger>
                                             <a
-                                                href={toUrl(item.href)}
+                                                href={
+                                                    item.href
+                                                        ? toUrl(item.href)
+                                                        : undefined
+                                                }
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="group inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent p-0 text-sm font-medium text-accent-foreground ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                                                className="group inline-flex size-9 items-center justify-center rounded-md bg-transparent p-0 text-sm font-medium text-accent-foreground ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                                             >
                                                 <span className="sr-only">
                                                     {item.title}

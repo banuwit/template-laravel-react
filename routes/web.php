@@ -18,8 +18,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('provinces', ProvinceController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('cities', CityController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('menus', MenuController::class)->only(['index', 'store', 'update', 'destroy']);
-
-    Route::inertia('examples', 'examples/index')->name('examples');
 });
 
 require __DIR__.'/settings.php';

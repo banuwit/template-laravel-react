@@ -91,14 +91,15 @@ export default function UsersIndex({
                                         ),
                                     },
                                     {
-                                        key: 'status',
-                                        title: 'Status',
-                                        options: STATUS_OPTIONS,
-                                    },
-                                    {
                                         key: 'gender',
                                         title: 'Gender',
                                         options: GENDER_OPTIONS,
+                                    },
+                                    {
+                                        key: 'status',
+                                        title: 'Status',
+                                        options: STATUS_OPTIONS,
+                                        variant: 'single',
                                     },
                                 ],
                             }}
@@ -107,8 +108,8 @@ export default function UsersIndex({
                                 direction: 'desc',
                             }}
                             showVisibilityToggle={false}
-                            showHeaderVisibilityToggle={true}
-
+                            enableColumnPinning
+                            enableColumnOrdering
                             pagination="advance"
                             emptyTitle={
                                 filters.search

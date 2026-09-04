@@ -28,7 +28,7 @@ class IndexUserRequest extends FormRequest
     {
         return [
             'search' => ['nullable', 'string', 'max:255'],
-            'sort' => ['nullable', 'in:name,email,department,position,join_date,status,created_at'],
+            'sort' => ['nullable', 'in:name,email,phone,department,position,join_date,status,gender,created_at'],
             'direction' => ['nullable', 'in:asc,desc'],
             'department' => ['nullable', 'array'],
             'department.*' => ['string', 'max:100'],
@@ -49,13 +49,13 @@ class IndexUserRequest extends FormRequest
     }
 
     /**
-     * @return 'name'|'email'|'department'|'position'|'join_date'|'status'|'created_at'
+     * @return 'name'|'email'|'phone'|'department'|'position'|'join_date'|'status'|'gender'|'created_at'
      */
     public function sort(): string
     {
         $sort = $this->validated('sort');
 
-        return in_array($sort, ['name', 'email', 'department', 'position', 'join_date', 'status', 'created_at'], true)
+        return in_array($sort, ['name', 'email', 'phone', 'department', 'position', 'join_date', 'status', 'gender', 'created_at'], true)
             ? $sort
             : 'created_at';
     }
